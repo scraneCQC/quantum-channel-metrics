@@ -1,6 +1,7 @@
 import random
 import numpy as np
 from scipy.linalg import sqrtm
+import math
 
 
 def pure_density_from_state(state):
@@ -33,3 +34,15 @@ def f_min(channel1, channel2, n_trials):
     with_ancilla = min([fidelity(apply_channel(channel1_ancilla, xi), apply_channel(channel2_ancilla, xi)) for xi in
                         [pure_density_from_state(random_state(dim ** 2)) for _ in range(n_trials)]])
     return max(with_ancilla, without_ancilla)
+
+
+def angle(channel, unitary):
+    return math.acos(f_min(channel, unitary) ** 0.5)
+
+
+def bures(channel, unitary):
+    return (2 - 2 * f_min(channel, unitary) ** 0.5) ** 0.5
+
+
+def C(channel, unitary):  # That's the only name they give it
+    return (1 - f_min(channel, unitary)) ** 0.5

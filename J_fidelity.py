@@ -20,3 +20,15 @@ def f_pro(channel, unitary):
                    for k in range(dim ** 2)]) for l in range(dim ** 2)]
     return 1 / dim ** 3 * \
         sum([np.trace(sigmas[k] @ apply_channel(channel, state_basis[k])) for k in range(dim ** 2)]).real
+
+
+def angle(channel, unitary):
+    return math.acos(f_pro(channel, unitary) ** 0.5)
+
+
+def bures(channel, unitary):
+    return (2 - 2 * f_pro(channel, unitary) ** 0.5) ** 0.5
+
+
+def C(channel, unitary):  # That's the only name they give it
+    return (1 - f_pro(channel, unitary)) ** 0.5
