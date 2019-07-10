@@ -36,13 +36,13 @@ def f_min(channel1, channel2, n_trials):
     return max(with_ancilla, without_ancilla)
 
 
-def angle(channel, unitary):
-    return math.acos(f_min(channel, unitary) ** 0.5)
+def angle(channel1, channel2):
+    return math.acos(f_min(channel1, channel2, 100) ** 0.5)
 
 
-def bures(channel, unitary):
-    return (2 - 2 * f_min(channel, unitary) ** 0.5) ** 0.5
+def bures(channel1, channel2):
+    return (2 - 2 * f_min(channel1, channel2, 100) ** 0.5) ** 0.5
 
 
-def C(channel, unitary):  # That's the only name they give it
-    return (1 - f_min(channel, unitary)) ** 0.5
+def C(channel1, channel2):  # That's the only name they give it
+    return (1 - f_min(channel1, channel2, 100)) ** 0.5
