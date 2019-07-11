@@ -20,8 +20,7 @@ def circuit_from_string(op_string):
            "T": lambda c: c.T(0),
            "H": lambda c: c.H(0),
            "X": lambda c: c.X(0),
-           "W": lambda c: None,     # TODO: how to implement this in tket?
-                                    # It's a scalar multiplication by e^i*pi/4, so doesn't affect the density matrix
+           "W": lambda c: None,     # Doesn't affect any possible measurements, just a global phase
            "I": lambda c: None}
 
     circuit = Circuit(1)
