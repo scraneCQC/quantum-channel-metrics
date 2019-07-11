@@ -7,12 +7,17 @@ from qiskit.providers.aer.noise import NoiseModel
 from pytket.qiskit import tk_to_dagcircuit
 from qiskit.converters.dag_to_circuit import dag_to_circuit
 import time
+import numpy as np
+from openfermion.ops import QubitOperator
+from Pauli import one_qubit_diracs
 
 
-gridsynth = open("pi_over_128.txt")
-lines = gridsynth.readlines()
-gridsynth.close()
-op_strings = list(map(lambda x: x.split(" ")[1].strip(), lines))
+def load_file(filename):
+    gridsynth = open(filename)
+    lines = gridsynth.readlines()
+    gridsynth.close()
+    op_strings = list(map(lambda x: x.strip(), lines))
+    return op_strings
 
 
 def circuit_from_string(op_string):
@@ -40,12 +45,13 @@ def make_noisy_backend(p1, gamma1, gamma2):
     # Not sure what order these should go in or if it matters
     total_error = amp_error.compose(phase_error.compose(dep_error))
     my_noise_model.add_all_qubit_quantum_error(total_error, ['u1', 'u2', 'u3'])
+    # S and T are u1, H is u2, X is u3
 
     noisy_backend = AerBackend(my_noise_model)
     return noisy_backend
 
 
-def run_circuit(op_string, p1, gamma1, gamma2, shots=100):
+def run_circuit(op_string, p1, gamma1, gamma2, shots=1000, observable=None):
     circuit = circuit_from_string(op_string)
     circuit.measure_all()
 
@@ -53,6 +59,9 @@ def run_circuit(op_string, p1, gamma1, gamma2, shots=100):
     # print(dag_to_circuit(tk_to_dagcircuit(circuit)))
 
     noisy_backend = make_noisy_backend(p1, gamma1, gamma2)
+
+    if observable is not None:
+        return noisy_backend.get_operator_expectation_value(circuit, observable, shots=shots)
 
     noisy_shots = noisy_backend.get_counts(circuit=circuit, shots=shots)
     if (0,) not in noisy_shots:
@@ -62,5 +71,17 @@ def run_circuit(op_string, p1, gamma1, gamma2, shots=100):
     return noisy_shots
 
 
-for s in op_strings:
-    print(run_circuit(s, 0.01, 0.01, 0.01))
+def decompose_operator(observable_matrix):
+    coefficients = [complex(np.trace(observable_matrix @ d)) / 2 for d in one_qubit_diracs[1:]]
+    q = QubitOperator()
+    for i in range(3):
+        if coefficients[i] != 0:
+            q += QubitOperator("XYZ"[i]+"0", coefficients[i])
+    return q
+
+
+def get_expectation(observable_matrix, circuit_string, p1=0, gamma1=0, gamma2=0):
+    pauli_bits = run_circuit(circuit_string, p1, gamma1, gamma2, observable=decompose_operator(observable_matrix))
+    identity_bit = np.trace(observable_matrix) / 2
+    return pauli_bits + identity_bit
+
