@@ -21,6 +21,8 @@ U = np.array([[complex(math.cos(theta / 2), - math.sin(theta / 2)), 0],
 J_fidelities = [J_fidelity.f_pro_experimental(c, U, p1, gamma1, gamma2) for c in circuits]
 print("The best accuracy for J was: " + str(max(range(max_acc), key=lambda x: J_fidelities[x])))
 
+
+# This is really slow:
 S_fidelities = [S_fidelity.experimental(c, U, 100, p1=p1, gamma1=gamma1, gamma2=gamma2) for c in circuits]
 print("The best accuracy for S was: " + str(max(range(max_acc), key=lambda x: S_fidelities[x])))
 
