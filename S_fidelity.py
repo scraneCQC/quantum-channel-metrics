@@ -2,6 +2,7 @@ import random
 import numpy as np
 from scipy.linalg import sqrtm
 import math
+import density_runner
 
 
 def pure_density_from_state(state):
@@ -25,7 +26,7 @@ def apply_channel(channel, density):
 
 
 def f_min(channel1, channel2, n_trials):
-    # TODO: maximise over all tensor products up to size n
+    # TODO: optimise over all tensor products up to size n
     dim = channel1[0].shape[0]
     without_ancilla = min([fidelity(apply_channel(channel1, xi), apply_channel(channel2, xi)) for xi in
                            [pure_density_from_state(random_state(dim)) for _ in range(n_trials)]])
@@ -33,7 +34,22 @@ def f_min(channel1, channel2, n_trials):
     channel2_ancilla = [np.kron(e, np.eye(dim)) for e in channel2]
     with_ancilla = min([fidelity(apply_channel(channel1_ancilla, xi), apply_channel(channel2_ancilla, xi)) for xi in
                         [pure_density_from_state(random_state(dim ** 2)) for _ in range(n_trials)]])
-    return max(with_ancilla, without_ancilla)
+    return min(with_ancilla, without_ancilla)
+
+
+def experimental(circuit_string, unitary, n_trials, *, p1=0, gamma1=0, gamma2=0):
+    # TODO: optimise over all tensor products up to size n
+    dim = unitary.shape[0]
+    without_ancilla = min([fidelity(density_runner.run_by_matrices(circuit_string, xi, p1, gamma1, gamma2),
+                                    apply_channel([unitary], xi)) for xi in
+                           [pure_density_from_state(random_state(dim)) for _ in range(n_trials)]])
+    return without_ancilla
+    # TODO: work with ancillas
+    channel1_ancilla = [np.kron(e, np.eye(dim)) for e in channel1]
+    channel2_ancilla = [np.kron(e, np.eye(dim)) for e in channel2]
+    with_ancilla = min([fidelity(apply_channel(channel1_ancilla, xi), apply_channel(channel2_ancilla, xi)) for xi in
+                        [pure_density_from_state(random_state(dim ** 2)) for _ in range(n_trials)]])
+    return min(with_ancilla, without_ancilla)
 
 
 def angle(channel1, channel2):

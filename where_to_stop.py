@@ -1,5 +1,6 @@
 import approximations
 import J_fidelity
+import S_fidelity
 import numpy as np
 import math
 import matplotlib.pyplot as plt
@@ -17,12 +18,16 @@ gamma2 = 0
 U = np.array([[complex(math.cos(theta / 2), - math.sin(theta / 2)), 0],
               [0, complex(math.cos(theta / 2), math.sin(theta / 2))]])
 
-fidelities = [J_fidelity.f_pro_experimental(c, U, p1, gamma1, gamma2) for c in circuits]
-print("The best accuracy was: "+str(max(range(max_acc), key=lambda x: fidelities[x])))
+J_fidelities = [J_fidelity.f_pro_experimental(c, U, p1, gamma1, gamma2) for c in circuits]
+print("The best accuracy for J was: " + str(max(range(max_acc), key=lambda x: J_fidelities[x])))
+
+S_fidelities = [S_fidelity.experimental(c, U, 100, p1=p1, gamma1=gamma1, gamma2=gamma2) for c in circuits]
+print("The best accuracy for S was: " + str(max(range(max_acc), key=lambda x: S_fidelities[x])))
 
 
 fig, ax1 = plt.subplots()
-ax1.plot(fidelities)
+ax1.plot(J_fidelities)
+ax1.plot(S_fidelities)
 ax1.set_ylabel('fidelity', color='tab:blue')
 ax1.set_xlabel('accuracy')
 ax2 = ax1.twinx()
