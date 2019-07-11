@@ -20,6 +20,9 @@ def f_pro(channel, unitary):
                    for k in range(dim ** 2)]) for l in range(dim ** 2)]
     return 1 / dim ** 3 * \
         sum([np.trace(sigmas[k] @ apply_channel(channel, state_basis[k])) for k in range(dim ** 2)]).real
+    # Experimentally, this trace is the expectation value of sigma.
+    # There are d ** 2 observables whose expectations would need to be found.
+    # If we cannot measure these we need to use a different formula which requires up to d ** 4 - d ** 2 expectations
 
 
 def angle(channel, unitary):

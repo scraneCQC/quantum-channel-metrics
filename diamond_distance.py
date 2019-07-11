@@ -6,7 +6,7 @@ from Pauli import *
 
 
 def trace_norm(m1, m2):
-    diff = m1 - m2
+    diff = complex(1, 0) * (m1 - m2)
     return np.trace(sqrtm(diff @ diff.transpose().conjugate())).real / 2
 
 

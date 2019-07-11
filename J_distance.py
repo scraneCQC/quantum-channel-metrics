@@ -3,12 +3,8 @@ from scipy.linalg import sqrtm
 
 
 def trace_norm(m1, m2):
-    diff = (m1 - m2)
-    if np.isrealobj(diff):
-        diff = diff * complex(0, 1)  # silly thing can't find square roots if it expects them to be real
+    diff = complex(1, 0) * (m1 - m2)
     s = sqrtm(diff @ diff.transpose().conjugate())
-    if np.isrealobj(diff):
-        s = s * complex(0.5 ** 0.5, - 0.5 ** 0.5)  # this just cancels it out
     return np.trace(s).real / 2
 
 
@@ -25,6 +21,9 @@ def jamiolkowski(channel):
 
 
 def j_distance(channel1, channel2):
-    #print(jamiolkowski(channel1))
     return trace_norm(jamiolkowski(channel1), (jamiolkowski(channel2)))
+
+# "so far as we are aware, experimentally determining D_pro requires doing full process
+# tomography, which for a d-dimensional quantum system
+# requires the estimation of d ** 4 − d ** 2 observable averages"
 
