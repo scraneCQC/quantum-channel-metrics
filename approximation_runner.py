@@ -20,7 +20,7 @@ def load_file(filename):
     return op_strings
 
 
-def circuit_from_string(op_string):
+def circuit_from_string(op_string, *, prep_circuit=None):
     ops = {"S": lambda c: c.S(0),
            "T": lambda c: c.T(0),
            "H": lambda c: c.H(0),
@@ -29,6 +29,8 @@ def circuit_from_string(op_string):
            "I": lambda c: None}
 
     circuit = Circuit(1)
+    if prep_circuit is not None:
+        prep_circuit(circuit)
     for s in op_string[::-1]:
         ops[s](circuit)
 
@@ -51,9 +53,10 @@ def make_noisy_backend(p1, gamma1, gamma2):
     return noisy_backend
 
 
-def run_circuit(op_string, p1, gamma1, gamma2, shots=1000, observable=None):
-    circuit = circuit_from_string(op_string)
-    circuit.measure_all()
+def run_circuit(op_string, p1, gamma1, gamma2, shots=1000, observable=None, *, prep_circuit=None):
+    circuit = circuit_from_string(op_string, prep_circuit=prep_circuit)
+    if observable is None:
+        circuit.measure_all()
 
     # Transform.RebaseToQiskit().apply(circuit)
     # print(dag_to_circuit(tk_to_dagcircuit(circuit)))
@@ -80,8 +83,8 @@ def decompose_operator(observable_matrix):
     return q
 
 
-def get_expectation(observable_matrix, circuit_string, p1=0, gamma1=0, gamma2=0):
-    pauli_bits = run_circuit(circuit_string, p1, gamma1, gamma2, observable=decompose_operator(observable_matrix))
+def get_expectation(observable_matrix, circuit_string, *, prep_circuit=None, p1=0, gamma1=0, gamma2=0, shots=1000000):
+    pauli_bits = run_circuit(circuit_string, p1, gamma1, gamma2, observable=decompose_operator(observable_matrix), prep_circuit=prep_circuit, shots=shots)
     identity_bit = np.trace(observable_matrix) / 2
-    return pauli_bits + identity_bit
+    return (pauli_bits + identity_bit).real
 

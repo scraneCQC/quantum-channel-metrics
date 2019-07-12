@@ -2,8 +2,7 @@ import random
 import numpy as np
 from scipy.linalg import sqrtm
 import math
-import density_runner
-from density_runner import apply_channel
+from density_runner import apply_channel, run_by_matrices, run_with_noisy_ancilla
 
 
 def pure_density_from_state(state):
@@ -37,10 +36,10 @@ def f_min(channel1, channel2, n_trials):
 def experimental(circuit_string, unitary, n_trials, *, p1=0, gamma1=0, gamma2=0):
     # TODO: optimise over all tensor products up to size n
     dim = unitary.shape[0]
-    without_ancilla = min([fidelity(density_runner.run_by_matrices(circuit_string, xi, p1, gamma1, gamma2),
+    without_ancilla = min([fidelity(run_by_matrices(circuit_string, xi, p1, gamma1, gamma2),
                                     apply_channel([unitary], xi)) for xi in
                            [pure_density_from_state(random_state(dim)) for _ in range(n_trials)]])
-    with_ancilla = min([fidelity(density_runner.run_with_noisy_ancilla(circuit_string, xi, p1, gamma1, gamma2),
+    with_ancilla = min([fidelity(run_with_noisy_ancilla(circuit_string, xi, p1, gamma1, gamma2),
                                  apply_channel([np.kron(unitary, np.eye(2))], xi)) for xi in
                         [pure_density_from_state(random_state(dim ** 2)) for _ in range(n_trials)]])
     return min(with_ancilla, without_ancilla)
