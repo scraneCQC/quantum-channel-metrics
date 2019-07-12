@@ -2,10 +2,7 @@ from Pauli import *
 import math
 from approximation_runner import get_expectation
 import density_runner
-
-
-def apply_channel(channel, density):
-    return sum([e @ density @ e.transpose().conjugate() for e in channel])
+from density_runner import apply_channel
 
 
 def f_pro(channel, unitary):

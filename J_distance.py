@@ -1,15 +1,12 @@
 import numpy as np
 from scipy.linalg import sqrtm
+from density_runner import apply_channel
 
 
 def trace_norm(m1, m2):
     diff = complex(1, 0) * (m1 - m2)
     s = sqrtm(diff @ diff.transpose().conjugate())
     return np.trace(s).real / 2
-
-
-def apply_channel(channel, density):
-    return sum([e @ density @ e.transpose().conjugate() for e in channel])
 
 
 def jamiolkowski(channel):

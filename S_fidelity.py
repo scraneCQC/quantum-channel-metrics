@@ -3,6 +3,7 @@ import numpy as np
 from scipy.linalg import sqrtm
 import math
 import density_runner
+from density_runner import apply_channel
 
 
 def pure_density_from_state(state):
@@ -19,10 +20,6 @@ def random_state(dim):
     c = np.array([complex(random.random() - 0.5, random.random() - 0.5) for _ in range(dim)])
     squared_modulus = c @ c.conjugate()
     return c / (squared_modulus ** 0.5)
-
-
-def apply_channel(channel, density):
-    return sum([e @ density @ e.transpose().conjugate() for e in channel])
 
 
 def f_min(channel1, channel2, n_trials):

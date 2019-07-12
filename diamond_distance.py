@@ -1,8 +1,8 @@
 import numpy as np
 from scipy.linalg import sqrtm
 import random
-import math
 from Pauli import *
+from density_runner import apply_channel
 
 
 def trace_norm(m1, m2):
@@ -24,10 +24,6 @@ def density_matrix_to_fano(rho):
 
 def pure_density_from_state(state):
     return np.outer(state.conjugate(), state)
-
-
-def apply_channel(channel, density):
-    return sum([e @ density @ e.transpose().conjugate() for e in channel])
 
 
 def monte_carlo_f_algorithm(channel1, channel2, n_trials):
