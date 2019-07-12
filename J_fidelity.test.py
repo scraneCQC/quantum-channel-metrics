@@ -1,7 +1,9 @@
 from J_fidelity import *
 from noise import *
 import math
-
+from Pauli import *
+from density_runner import ops
+"""
 
 #print(f_pro(identity_channel(2), np.eye(4)))
 
@@ -26,23 +28,38 @@ phase_damping = phase_damping_channel(gamma2)
 #print(f_pro(phase_damping, I1))
 
 
-#print(f_pro_experimental("I", np.eye(2)))
+print(f_pro_experimental("I", np.eye(2)))
+print(f_pro_experimental("I", np.eye(2), simulate=True))
 print()
 
-#print(f_pro_experimental("X", np.eye(2)))
+print(f_pro_experimental("X", np.eye(2)))
+print(f_pro_experimental("X", np.eye(2), simulate=True))
 print()
 
-#print(f_pro_experimental("HH", np.eye(2)))
+
+for _ in range(10):
+    print(f_pro_experimental("I", np.eye(2), simulate=True))
 print()
+
 
 c = math.cos(math.pi/256)
 s = math.sin(math.pi/256)
-#print(f_pro_experimental("HTSHTHTSHTSHTHTSHTHTHTSHTSHTHTSHTSHTSHTSHTSHTHTSHTSHTHT",
-#                         np.array([[complex(c, -s), 0], [0, complex(c, s)]]), p1=0.2, gamma1=0.2, gamma2=0.2))
+print(f_pro_experimental("HTSHTHTSHTSHTHTSHTHTHTSHTSHTHTSHTSHTSHTSHTSHTHTSHTSHTHT",
+                         np.array([[complex(c, -s), 0], [0, complex(c, s)]])))
+print(f_pro_experimental("HTSHTHTSHTSHTHTSHTHTHTSHTSHTHTSHTSHTSHTSHTSHTHTSHTSHTHT",
+                         np.array([[complex(c, -s), 0], [0, complex(c, s)]]), simulate=True))
+print()
 
+"""
 theta = 1
 U = np.array([[complex(math.cos(theta / 2), - math.sin(theta / 2)), 0],
               [0, complex(math.cos(theta / 2), math.sin(theta / 2))]])
-print(f_pro(identity_channel(1), U))
+
+
+for name, mat in ops.items():
+    print(name)
+    print(f_pro_experimental(name, U))
+    print(f_pro_experimental(name, U, simulate=True))
+    print()
 
 

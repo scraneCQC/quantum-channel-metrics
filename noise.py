@@ -1,6 +1,10 @@
 from Pauli import *
 
-not_channel = [one_qubit_diracs[1]]
+def not_channel(n_qubits):
+    u = X
+    for _ in range(n_qubits - 1):
+        u = np.kron(u, X)
+    return [u]
 
 
 def identity_channel(n_qubits):

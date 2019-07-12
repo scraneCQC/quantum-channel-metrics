@@ -6,7 +6,7 @@ import math
 print(monte_carlo_f_algorithm([np.kron(X, X)], identity_channel(2), 100))
 
 
-print(monte_carlo_f_algorithm(not_channel, identity_channel(1), 100))
+print(monte_carlo_f_algorithm(not_channel(1), identity_channel(1), 100))
 
 
 theta = math.pi * 0.3

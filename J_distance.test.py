@@ -6,7 +6,7 @@ import math
 print(j_distance([np.kron(X, X)], identity_channel(2)))
 
 
-print(j_distance(not_channel, identity_channel(1)))
+print(j_distance(not_channel(1), identity_channel(1)))
 
 
 theta = math.pi * 0.3
