@@ -3,6 +3,7 @@ from scipy.linalg import sqrtm
 import random
 from Pauli import *
 from density_runner import apply_channel
+import math
 
 
 def trace_norm(m1, m2):
@@ -26,15 +27,20 @@ def pure_density_from_state(state):
     return np.outer(state.conjugate(), state)
 
 
+def random_densities(dim, n_trials):
+    return [sum([r * pure_density_from_state(random_state(dim)) for r in np.random.dirichlet(np.ones(dim), size=1)[0]])
+            for _ in range(n_trials)]
+
+
 def monte_carlo_f_algorithm(channel1, channel2, n_trials):
     # channels: a list of numpy arrays (Kraus matrices)
-    # TODO: maximise over all tensor products up to size n
     dim = channel1[0].shape[0]
-    without_ancilla = max([trace_norm(apply_channel(channel1, xi), apply_channel(channel2, xi)) for xi in
-        [pure_density_from_state(random_state(dim)) for _ in range(n_trials)]])
-    channel1_ancilla = [np.kron(e, np.eye(dim)) for e in channel1]
-    channel2_ancilla = [np.kron(e, np.eye(dim)) for e in channel2]
-    with_ancilla = max([trace_norm(apply_channel(channel1_ancilla, xi), apply_channel(channel2_ancilla, xi)) for xi in
-        [pure_density_from_state(random_state(dim ** 2)) for _ in range(n_trials)]])
-    return max(with_ancilla, without_ancilla)
-
+    max_norm = max([trace_norm(apply_channel(channel1, xi), apply_channel(channel2, xi)) for xi in
+                    random_densities(dim, n_trials)])
+    for k in range(int(math.log(dim, 2))):
+        channel1 = [np.kron(e, np.eye(2)) for e in channel1]
+        channel2 = [np.kron(e, np.eye(2)) for e in channel2]
+        with_ancilla = max([trace_norm(apply_channel(channel1, xi), apply_channel(channel2, xi)) for xi in
+                            random_densities(2 ** (k + 1) * dim, n_trials)])
+        max_norm = max(max_norm, with_ancilla)
+    return max_norm

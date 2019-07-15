@@ -24,7 +24,7 @@ def f_pro(channel, unitary):
     # If we cannot measure these we need to use a different formula which requires up to d ** 4 - d ** 2 expectations
 
 
-def f_pro_experimental(circuit_string, unitary, p1=0, gamma1=0, gamma2=0, simulate=False):
+def f_pro_experimental(circuit_string, unitary, p1=0, gamma1=0, gamma2=0, key=None, simulate=False):
     dim = unitary.shape[0]
     n_qubits = int(math.log(dim, 2))
     u_basis = get_diracs(n_qubits)
@@ -48,7 +48,7 @@ def f_pro_experimental(circuit_string, unitary, p1=0, gamma1=0, gamma2=0, simula
         expectations = [get_expectation(sigmas[i], circuit_string, prep_circuit=initialise[i],
                                   p1=p1, gamma1=gamma1, gamma2=gamma2) * 2 for i in range(4)]
     else:
-        expectations = [np.trace(sigmas[k] @ density_runner.run_by_matrices(circuit_string, state_basis[k], p1, gamma1, gamma2))
+        expectations = [np.trace(sigmas[k] @ density_runner.run_by_matrices(circuit_string, state_basis[k], p1, gamma1, gamma2, key))
                         .real for k in range(dim ** 2)]
     # print(expectations)
     return 1 / dim ** 3 * sum(expectations)
