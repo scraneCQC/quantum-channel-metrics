@@ -50,7 +50,7 @@ def f_pro_experimental(circuit_string, unitary, p1=0, gamma1=0, gamma2=0, simula
     else:
         expectations = [np.trace(sigmas[k] @ density_runner.run_by_matrices(circuit_string, state_basis[k], p1, gamma1, gamma2))
                         .real for k in range(dim ** 2)]
-    print(expectations)
+    # print(expectations)
     return 1 / dim ** 3 * sum(expectations)
 
 

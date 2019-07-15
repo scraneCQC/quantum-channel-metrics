@@ -1,6 +1,20 @@
 from S_fidelity import *
 from noise import *
 import math
+from density_runner import ops
+
+
+print([np.trace(rho) for rho in random_densities(2, 10)])
+
+print(experimental("HTSHTHTSHTSHTHTSHTHTHTSHTSHTHTSHTSHTSHTSHTSHTHTSHTSHTHT",
+                   np.array([[complex(math.cos(math.pi / 128), -math.sin(math.pi/128)), 0],
+                             [0, complex(math.cos(math.pi / 128), math.sin(math.pi/128))]]), 100))
+
+
+print(experimental("HTSHTHTSHTSHTHTSHTHTHTSHTSHTHTSHTSHTSHTSHTSHTHTSHTSHTHT",
+                   np.kron(np.array([[complex(math.cos(math.pi / 128), -math.sin(math.pi/128)), 0],
+                             [0, complex(math.cos(math.pi / 128), math.sin(math.pi/128))]]), np.eye(2)), 100,
+                   key={k: np.kron(v, np.eye(2)) for k, v in ops.items()}))
 
 
 print(f_min(identity_channel(2), identity_channel(2), 100))

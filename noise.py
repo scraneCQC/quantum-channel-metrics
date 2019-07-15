@@ -1,5 +1,6 @@
 from Pauli import *
 
+
 def not_channel(n_qubits):
     u = X
     for _ in range(n_qubits - 1):
@@ -11,14 +12,26 @@ def identity_channel(n_qubits):
     return [np.eye(2 ** n_qubits)]
 
 
-def depolarising_channel(p1):
-    return [p * M for p, M in zip(
+def depolarising_channel(p1, n_qubits=1):
+    basic_channel = [p * M for p, M in zip(
             [(1 - p1) ** 0.5, (p1 / 3) ** 0.5, (p1 / 3) ** 0.5, (p1 / 3) ** 0.5], one_qubit_diracs)]
+    channel = basic_channel
+    for _ in range(n_qubits - 1):
+        channel = [np.kron(channel[i], basic_channel[i]) for i in range(4)]
+    return channel
 
 
-def amplitude_damping_channel(gamma):
-    return [np.array([[1, 0], [0, (1 - gamma) ** 0.5]]), np.array([[0, gamma ** 0.5], [0, 0]])]
+def amplitude_damping_channel(gamma, n_qubits=1):
+    basic_channel = [np.array([[1, 0], [0, (1 - gamma) ** 0.5]]), np.array([[0, gamma ** 0.5], [0, 0]])]
+    channel = basic_channel
+    for _ in range(n_qubits - 1):
+        channel = [np.kron(channel[i], basic_channel[i]) for i in range(2)]
+    return channel
 
 
-def phase_damping_channel(gamma):
-    return [np.array([[1, 0], [0, (1 - gamma) ** 0.5]]), np.array([[0, 0], [0, gamma ** 0.5]])]
+def phase_damping_channel(gamma, n_qubits=1):
+    basic_channel = [np.array([[1, 0], [0, (1 - gamma) ** 0.5]]), np.array([[0, 0], [0, gamma ** 0.5]])]
+    channel = basic_channel
+    for _ in range(n_qubits - 1):
+        channel = [np.kron(channel[i], basic_channel[i]) for i in range(2)]
+    return channel

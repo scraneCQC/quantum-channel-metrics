@@ -2,7 +2,7 @@ import random
 import numpy as np
 from scipy.linalg import sqrtm
 import math
-from density_runner import apply_channel, run_by_matrices, run_with_noisy_ancilla
+from density_runner import apply_channel, run_by_matrices, ops
 
 
 def pure_density_from_state(state):
@@ -21,28 +21,37 @@ def random_state(dim):
     return c / (squared_modulus ** 0.5)
 
 
+def random_densities(dim, n_trials):
+    return [sum([r * pure_density_from_state(random_state(dim)) for r in np.random.dirichlet(np.ones(dim), size=1)[0]])
+            for _ in range(n_trials)]
+
+
 def f_min(channel1, channel2, n_trials):
-    # TODO: optimise over all tensor products up to size n
     dim = channel1[0].shape[0]
-    without_ancilla = min([fidelity(apply_channel(channel1, xi), apply_channel(channel2, xi)) for xi in
-                           [pure_density_from_state(random_state(dim)) for _ in range(n_trials)]])
-    channel1_ancilla = [np.kron(e, np.eye(dim)) for e in channel1]
-    channel2_ancilla = [np.kron(e, np.eye(dim)) for e in channel2]
-    with_ancilla = min([fidelity(apply_channel(channel1_ancilla, xi), apply_channel(channel2_ancilla, xi)) for xi in
-                        [pure_density_from_state(random_state(dim ** 2)) for _ in range(n_trials)]])
-    return min(with_ancilla, without_ancilla)
+    min_fidelity = min([fidelity(apply_channel(channel1, xi), apply_channel(channel2, xi)) for xi in
+                        random_densities(dim, n_trials)])
+    for k in range(int(math.log(dim, 2))):
+        channel1 = [np.kron(e, np.eye(2)) for e in channel1]
+        channel2 = [np.kron(e, np.eye(2)) for e in channel2]
+        with_ancilla = min([fidelity(apply_channel(channel1, xi), apply_channel(channel2, xi)) for xi in
+                            random_densities(2 ** (k + 1) * dim, n_trials)])
+        min_fidelity = min(min_fidelity, with_ancilla)
+    return min_fidelity
 
 
-def experimental(circuit_string, unitary, n_trials, *, p1=0, gamma1=0, gamma2=0):
-    # TODO: optimise over all tensor products up to size n
+def experimental(circuit_string, unitary, n_trials, *, p1=0, gamma1=0, gamma2=0, key=None):
     dim = unitary.shape[0]
-    without_ancilla = min([fidelity(run_by_matrices(circuit_string, xi, p1, gamma1, gamma2),
-                                    apply_channel([unitary], xi)) for xi in
-                           [pure_density_from_state(random_state(dim)) for _ in range(n_trials)]])
-    with_ancilla = min([fidelity(run_with_noisy_ancilla(circuit_string, xi, p1, gamma1, gamma2),
-                                 apply_channel([np.kron(unitary, np.eye(2))], xi)) for xi in
-                        [pure_density_from_state(random_state(dim ** 2)) for _ in range(n_trials)]])
-    return min(with_ancilla, without_ancilla)
+    if key is None:
+        key = ops
+    min_fidelity = min([fidelity(run_by_matrices(circuit_string, xi, p1, gamma1, gamma2, key),
+                                 apply_channel([unitary], xi)) for xi in random_densities(dim, n_trials)])
+    for i in range(int(math.log(dim, 2))):
+        key = {k: np.kron(v, np.eye(2)) for k, v in key.items()}
+        unitary = np.kron(unitary, np.eye(2))
+        with_ancilla = min([fidelity(run_by_matrices(circuit_string, xi, p1, gamma1, gamma2, key=key),
+                            apply_channel([unitary], xi)) for xi in random_densities(2 ** (i + 1) * dim, n_trials)])
+        min_fidelity = min(min_fidelity, with_ancilla)
+    return min_fidelity
 
 
 def angle(channel1, channel2):
