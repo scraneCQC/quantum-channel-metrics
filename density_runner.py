@@ -14,7 +14,9 @@ ops = {"S": np.array([[1, 0], [0, complex(0, 1)]]),
        "I": np.eye(2)}
 
 
-def run_by_matrices(string, start_density, p1=0, gamma1=0, gamma2=0, key=ops):
+def run_by_matrices(string, start_density, p1=0, gamma1=0, gamma2=0, key=None):
+    if key is None:
+        key = ops
     n = int(math.log(start_density.shape[0], 2))
     depolarising = depolarising_channel(p1, n_qubits=n)
     amplitude_damping = amplitude_damping_channel(gamma1, n_qubits=n)

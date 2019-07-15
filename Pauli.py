@@ -14,4 +14,3 @@ def get_diracs(n_qubits):
         diracs = [np.kron(x, y) for x in diracs for y in one_qubit_diracs]
         n_qubits = n_qubits - 1
     return diracs
-

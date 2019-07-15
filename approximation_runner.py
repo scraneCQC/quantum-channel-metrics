@@ -10,6 +10,7 @@ import time
 import numpy as np
 from openfermion.ops import QubitOperator
 from Pauli import one_qubit_diracs
+from itertools import product
 
 
 def load_file(filename):
@@ -20,20 +21,20 @@ def load_file(filename):
     return op_strings
 
 
-def circuit_from_string(op_string, *, prep_circuit=None):
-    ops = {"S": lambda c: c.S(0),
-           "T": lambda c: c.T(0),
-           "H": lambda c: c.H(0),
-           "X": lambda c: c.X(0),
-           "W": lambda c: None,     # Doesn't affect any possible measurements, just a global phase
-           "I": lambda c: None}
+ops = {"S": lambda c: c.S(0),
+       "T": lambda c: c.T(0),
+       "H": lambda c: c.H(0),
+       "X": lambda c: c.X(0),
+       "W": lambda c: None,     # Doesn't affect any possible measurements, just a global phase
+       "I": lambda c: None}
 
-    circuit = Circuit(1)
-    if prep_circuit is not None:
-        prep_circuit(circuit)
+
+def circuit_from_string(op_string, *, n_qubits=1, key=None):
+    if key is None:
+        key = ops
+    circuit = Circuit(n_qubits)
     for s in op_string[::-1]:
-        ops[s](circuit)
-
+        key[s](circuit)
     return circuit
 
 
@@ -53,8 +54,8 @@ def make_noisy_backend(p1, gamma1, gamma2):
     return noisy_backend
 
 
-def run_circuit(op_string, p1, gamma1, gamma2, shots=1000, observable=None, *, prep_circuit=None):
-    circuit = circuit_from_string(op_string, prep_circuit=prep_circuit)
+def run_circuit(op_string, p1, gamma1, gamma2, shots=1000, observable=None, *, prep_circuit=None, key=None, n_qubits=1):
+    circuit = circuit_from_string(op_string, prep_circuit=prep_circuit, key=key)
     if observable is None:
         circuit.measure_all()
 
@@ -67,24 +68,18 @@ def run_circuit(op_string, p1, gamma1, gamma2, shots=1000, observable=None, *, p
         return noisy_backend.get_operator_expectation_value(circuit, observable, shots=shots)
 
     noisy_shots = noisy_backend.get_counts(circuit=circuit, shots=shots)
-    if (0,) not in noisy_shots:
-        noisy_shots[(0,)] = 0
-    if (1,) not in noisy_shots:
-        noisy_shots[(1,)] = 0
+    all_outcomes = tuple(product((0, 1), repeat=n_qubits))
+    for o in all_outcomes:
+        if o not in noisy_shots:
+            noisy_shots[o] = 0
     return noisy_shots
 
 
-def decompose_operator(observable_matrix):
-    coefficients = [complex(np.trace(observable_matrix @ d)) / 2 for d in one_qubit_diracs[1:]]
-    q = QubitOperator()
-    for i in range(3):
-        if coefficients[i] != 0:
-            q += QubitOperator("XYZ"[i]+"0", coefficients[i])
-    return q
-
-
-def get_expectation(observable_matrix, circuit_string, *, prep_circuit=None, p1=0, gamma1=0, gamma2=0, shots=1000000):
-    pauli_bits = run_circuit(circuit_string, p1, gamma1, gamma2, observable=decompose_operator(observable_matrix), prep_circuit=prep_circuit, shots=shots)
-    identity_bit = np.trace(observable_matrix) / 2
-    return (pauli_bits + identity_bit).real
-
+def get_pauli_expectation(circuit_string, initial_circuit, pauli_string, n_qubits, *, p1=0, gamma1=0, gamma2=0, shots=100, key=None):
+    if pauli_string == "I" * n_qubits:
+        return 1
+    circuit = initial_circuit.copy()
+    circuit.add_circuit(circuit_from_string(circuit_string, n_qubits=n_qubits, key=key), list(range(n_qubits)))
+    noisy_backend = make_noisy_backend(p1, gamma1, gamma2)
+    return noisy_backend.get_pauli_expectation_value(circuit,
+                [(i, pauli_string[i]) for i in range(len(pauli_string)) if pauli_string[i] != "I"], shots=shots).real

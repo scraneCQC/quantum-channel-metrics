@@ -29,25 +29,27 @@ print(f_pro(phase_damping, I1))
 
 
 print(f_pro_experimental("I", np.eye(2)))
-#print(f_pro_experimental("I", np.eye(2), simulate=True))
+print(f_pro_simulated("I", np.eye(2)))
 print()
 
 print(f_pro_experimental("X", np.eye(2)))
-#print(f_pro_experimental("X", np.eye(2), simulate=True))
+print(f_pro_simulated("X", np.eye(2)))
 print()
 
 
-#for _ in range(10):
-#    #print(f_pro_experimental("I", np.eye(2), simulate=True))
-#print()
+for _ in range(10):
+    print(f_pro_simulated("I", np.eye(2)))
+print()
 
 
 c = math.cos(math.pi/256)
 s = math.sin(math.pi/256)
 print(f_pro_experimental("HTSHTHTSHTSHTHTSHTHTHTSHTSHTHTSHTSHTSHTSHTSHTHTSHTSHTHT",
                          np.array([[complex(c, -s), 0], [0, complex(c, s)]])))
-#print(f_pro_experimental("HTSHTHTSHTSHTHTSHTHTHTSHTSHTHTSHTSHTSHTSHTSHTHTSHTSHTHT",
-#                         np.array([[complex(c, -s), 0], [0, complex(c, s)]]), simulate=True))
+print(f_pro_simulated("HTSHTHTSHTSHTHTSHTHTHTSHTSHTHTSHTSHTSHTSHTSHTHTSHTSHTHT",
+                         np.array([[complex(c, -s), 0], [0, complex(c, s)]])))
+print(f_pro_simulated("HTSHTHTSHTSHTHTSHTHTHTSHTSHTHTSHTSHTSHTSHTSHTHTSHTSHTHT",
+                         np.kron(np.array([[complex(c, -s), 0], [0, complex(c, s)]]), np.eye(2))))
 print()
 
 
@@ -58,8 +60,6 @@ U = np.array([[complex(math.cos(theta / 2), - math.sin(theta / 2)), 0],
 
 for name, mat in ops.items():
     print(name)
-    print(f_pro_experimental(name, U))
-    #print(f_pro_experimental(name, U, simulate=True))
+    print("actual ", f_pro_experimental(name, U))
+    print("simulated ", f_pro_simulated(name, U))
     print()
-
-

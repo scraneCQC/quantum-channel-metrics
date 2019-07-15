@@ -1,15 +1,19 @@
 from approximation_runner import *
 import density_runner
 from Pauli import *
+import time
 
 s = "HTSHTHTSHTSHTHTSHTHTHTSHTSHTHTSHTSHTSHTSHTSHTHTSHTSHTHT"
 
 #for m in one_qubit_diracs:
 #    print(get_expectation(I1, s) - np.trace(I1 @ density_runner.run_by_matrices(s, np.array([[1, 0], [0, 0]]))).real)
 
+circuit = Circuit(1)
+circuit.Rx(0, -0.5)
 
-def my_circuit_maker(c):
-    c.measure_all()
-    c.H(0)
-    c.measure_all()
-print(run_circuit("I", 0,0,0, prep_circuit=my_circuit_maker))
+print(circuit.get_commands())
+
+start = time.time()
+print(get_pauli_expectation("X", circuit, "Y", 1, shots=100))
+end = time.time()
+# print(end-start)
