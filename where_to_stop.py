@@ -25,6 +25,7 @@ end = time.time()
 print("The best accuracy for J was: " + str(max(range(max_acc), key=lambda x: J_fidelities[x])))
 print("It took " + str(end-start) + " seconds")
 
+J_noiseless = [J_fidelity.f_pro_experimental(c, U) for c in circuits]
 
 # This may take a few seconds
 start = time.time()
@@ -34,21 +35,21 @@ print("The best accuracy for S was: " + str(max(range(max_acc), key=lambda x: S_
 print("It took " + str(end-start) + " seconds")
 
 # This will take several minutes
-start = time.time()
-J_simulated = [J_fidelity.f_pro_simulated(c, U, p1, gamma1, gamma2) for c in circuits]
-end = time.time()
-print("The best accuracy for simulation was: " + str(max(range(max_acc), key=lambda x: J_simulated[x])))
-print("It took " + str(end-start) + " seconds")
+# start = time.time()
+# J_simulated = [J_fidelity.f_pro_simulated(c, U, p1, gamma1, gamma2) for c in circuits]
+# end = time.time()
+# print("The best accuracy for simulation was: " + str(max(range(max_acc), key=lambda x: J_simulated[x])))
+# print("It took " + str(end-start) + " seconds")
 
 fig, ax1 = plt.subplots()
 lineJ, = ax1.plot(J_fidelities)
 lineS, = ax1.plot(S_fidelities)
-lineJ_sim, = ax1.plot(J_simulated)
+#lineJ_sim, = ax1.plot(J_simulated)
+lineJ2, = ax1.plot(J_noiseless)
 ax1.set_ylabel('fidelity', color='tab:blue')
 ax1.set_xlabel('accuracy')
 ax2 = ax1.twinx()
 line_length, = ax2.plot([len(c) for c in circuits], color='tab:red')
 ax2.set_ylabel('circuit length', color='tab:red')
-ax1.legend((lineJ, lineS, lineJ_sim, line_length), ("J_fidelity (theoretical)", "S_fidelity (theoretical)", "J_fidelity (simulated)", "Circuit length"))
-fig.tight_layout()
+ax1.legend((lineJ, lineJ2, lineS, line_length), ("J_fidelity (noisy)", "J_fidelity (noiseless)", "S_fidelity (noisy)", "Circuit length"))
 plt.savefig("out.png")
