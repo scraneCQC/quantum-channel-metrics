@@ -7,8 +7,6 @@ import matplotlib.pyplot as plt
 import time
 
 
-theta = math.pi/3
-
 def run(circuits, U, noise_strength, plot_against_length=False):
     max_acc = len(circuits)
 
@@ -47,16 +45,18 @@ def run(circuits, U, noise_strength, plot_against_length=False):
         plt.figure()
         lineJ, = plt.plot(lengths, J_fidelities)
         lineS, = plt.plot(lengths, S_fidelities)
-        line_model, = plt.plot(lengths, [1 - (0.05 * (2 ** -(n+1)) + 20 * noise_strength * (n)) for n in range(max_acc)])
+        line_model1, = plt.plot(lengths, [1 - (0.07 * (2 ** -(n+1)) + 1.7 * noise_strength * lengths[n]) for n in range(max_acc)])
+        line_model2, = plt.plot(lengths, [1 - (0.062 * (2 ** -(n+1)) + 4.5 * noise_strength * lengths[n]) for n in range(max_acc)])
         plt.xlabel('Circuit length')
         plt.ylabel('Fidelity')
-        plt.legend((lineJ, lineS, line_model), ('J_fidelity', 'S_fidelity', 'model'))
+        plt.legend((lineJ, lineS, line_model1, line_model2), ('J_fidelity', 'S_fidelity', 'model', 'model 2'))
         plt.savefig('out.png')
         return
 
     fig, ax1 = plt.subplots()
     lineJ, = ax1.plot(J_fidelities)
     lineS, = ax1.plot(S_fidelities)
+
     #lineJ_sim, = ax1.plot(J_simulated)
     lineJ2, = ax1.plot(J_noiseless)
     ax1.set_ylabel('fidelity', color='tab:blue')
@@ -68,13 +68,17 @@ def run(circuits, U, noise_strength, plot_against_length=False):
     plt.savefig("out.png")
 
 
-max_acc = 50
+max_acc = 20
+
+
+theta = math.pi/3
+
 
 circuits = approximations.get_circuits(str(theta), max_accuracy=max_acc)
 # circuits = ["HH"*i for i in range(max_acc)]
 
 U = np.array([[complex(math.cos(theta / 2), - math.sin(theta / 2)), 0],
-                  [0, complex(math.cos(theta / 2), math.sin(theta / 2))]])
-#U = np.eye(2)
+              [0, complex(math.cos(theta / 2), math.sin(theta / 2))]])
+# U = np.eye(2)
 
 run(circuits, U, 1e-4, True)
