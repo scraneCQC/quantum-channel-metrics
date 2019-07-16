@@ -11,9 +11,7 @@ s = "HTSHTHTSHTSHTHTSHTHTHTSHTSHTHTSHTSHTSHTSHTSHTHTSHTSHTHT"
 circuit = Circuit(1)
 circuit.Rx(0, -0.5)
 
-print(circuit.get_commands())
-
 start = time.time()
-print(get_pauli_expectation("X", circuit, "Y", 1, shots=100))
+print(get_pauli_expectation_v2("X", circuit, "Y", shots=1000000))
 end = time.time()
-# print(end-start)
+print(end-start)

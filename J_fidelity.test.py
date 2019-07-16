@@ -4,7 +4,7 @@ import math
 from Pauli import *
 from density_runner import ops
 
-
+"""
 print(f_pro(identity_channel(2), np.eye(4)))
 
 
@@ -37,11 +37,6 @@ print(f_pro_simulated("X", np.eye(2)))
 print()
 
 
-for _ in range(10):
-    print(f_pro_simulated("I", np.eye(2)))
-print()
-
-
 c = math.cos(math.pi/256)
 s = math.sin(math.pi/256)
 print(f_pro_experimental("HTSHTHTSHTSHTHTSHTHTHTSHTSHTHTSHTSHTSHTSHTSHTHTSHTSHTHT",
@@ -52,7 +47,7 @@ print(f_pro_simulated("HTSHTHTSHTSHTHTSHTHTHTSHTSHTHTSHTSHTSHTSHTSHTHTSHTSHTHT",
                          np.kron(np.array([[complex(c, -s), 0], [0, complex(c, s)]]), np.eye(2))))
 print()
 
-
+"""
 theta = 1
 U = np.array([[complex(math.cos(theta / 2), - math.sin(theta / 2)), 0],
               [0, complex(math.cos(theta / 2), math.sin(theta / 2))]])

@@ -1,6 +1,6 @@
 from Pauli import *
 import math
-from approximation_runner import get_pauli_expectation
+from approximation_runner import get_pauli_expectation_v2
 import density_runner
 from density_runner import apply_channel
 from pytket import Circuit
@@ -77,8 +77,8 @@ def f_pro_simulated(circuit_string, unitary, p1=0, gamma1=0, gamma2=0, key=None)
     expectations = np.zeros((dim ** 2, dim ** 2))
     for k, l in list(product(range(dim ** 2), range(dim ** 2))):
         s = list(product("IXYZ", repeat=n_qubits))
-        expectations[l][k] = get_pauli_expectation(circuit_string, preps[k], "".join(s[l]), n_qubits,
-                                                   p1=p1, gamma1=gamma1, gamma2=gamma2, key=key, shots=100000) * dim
+        expectations[l][k] = get_pauli_expectation_v2(circuit_string, preps[k], "".join(s[l]),
+                                                   p1=p1, gamma1=gamma1, gamma2=gamma2, key=key, shots=int(1e5)) * dim
     #expectations = np.array([[get_pauli_expectation(circuit_string, prep, "".join(s), n_qubits,
     #                                                p1=p1, gamma1=gamma1, gamma2=gamma2, key=key, shots=100000) * dim
     #                          for prep in preps] for s in product("IXYZ", repeat=n_qubits)])

@@ -83,3 +83,27 @@ def get_pauli_expectation(circuit_string, initial_circuit, pauli_string, n_qubit
     noisy_backend = make_noisy_backend(p1, gamma1, gamma2)
     return noisy_backend.get_pauli_expectation_value(circuit,
                 [(i, pauli_string[i]) for i in range(len(pauli_string)) if pauli_string[i] != "I"], shots=shots).real
+
+
+final_circuits = {a: Circuit(1) for a in "IXYZ"}
+final_circuits["X"].H(0)
+final_circuits["Y"].Sdg(0)
+final_circuits["Y"].H(0)
+
+
+def get_pauli_expectation_v2(circuit_string, initial_circuit, pauli_string, *,
+                             p1=0, gamma1=0, gamma2=0, shots=100, key=None):
+    n_qubits = len(pauli_string)
+    if pauli_string == "I" * n_qubits:
+        return 1
+    circuit = initial_circuit.copy()
+    circuit.add_circuit(circuit_from_string(circuit_string, n_qubits=n_qubits, key=key), list(range(n_qubits)))
+    for i in range(n_qubits):
+        circuit.add_circuit(final_circuits[pauli_string[i]].copy(), [i])
+    circuit.measure_all()
+    noisy_backend = make_noisy_backend(p1, gamma1, gamma2)
+    start = time.time()
+    noisy_shots = noisy_backend.get_counts(circuit, shots)
+    end = time.time()
+    print(end-start)
+    return sum(v * (-1) ** sum(k) for k, v in noisy_shots.items())/shots
