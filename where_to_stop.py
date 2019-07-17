@@ -1,6 +1,7 @@
 import approximations
 import J_fidelity
 import S_fidelity
+import diamond_distance
 import numpy as np
 import math
 import matplotlib.pyplot as plt
@@ -15,22 +16,30 @@ def run(circuits, U, noise_strength, plot_against_length=False):
     gamma2 = noise_strength
 
     start = time.time()
-    J_fidelities = [J_fidelity.f_pro_experimental(c, U, p1, gamma1, gamma2) for c in circuits]
+    J_fidelities = [(2 - 2 * J_fidelity.f_pro_experimental(c, U, p1, gamma1, gamma2) ** 0.5) ** 0.5 for c in circuits]
     end = time.time()
-    print("The best accuracy for J was: " + str(max(range(max_acc), key=lambda x: J_fidelities[x])))
+    print("The best accuracy for J was: " + str(min(range(max_acc), key=lambda x: J_fidelities[x])))
     print("It took " + str(end-start) + " seconds")
-    print("gradient for J is "+str((J_fidelities[-1] - J_fidelities[0])/max_acc))
+    #print("gradient for J is "+str((J_fidelities[-1] - J_fidelities[0])/max_acc))
     print()
 
-    J_noiseless = [J_fidelity.f_pro_experimental(c, U) for c in circuits]
+    #J_noiseless = [(2 - 2 * J_fidelity.f_pro_experimental(c, U) ** 0.5) ** 0.5 for c in circuits]
 
     # This may take a few seconds
     start = time.time()
-    S_fidelities = [S_fidelity.experimental(c, U, 100, p1=p1, gamma1=gamma1, gamma2=gamma2) for c in circuits]
+    S_fidelities = [(2 - 2 * S_fidelity.experimental(c, U, 100, p1=p1, gamma1=gamma1, gamma2=gamma2) ** 0.5) ** 0.5
+                    for c in circuits]
     end = time.time()
-    print("The best accuracy for S was: " + str(max(range(max_acc), key=lambda x: S_fidelities[x])))
+    print("The best accuracy for S was: " + str(min(range(max_acc), key=lambda x: S_fidelities[x])))
     print("It took " + str(end-start) + " seconds")
-    print("gradient for S is " + str((S_fidelities[-1] - S_fidelities[0]) / max_acc))
+    #print("gradient for S is " + str((S_fidelities[-1] - S_fidelities[0]) / max_acc))
+    print()
+
+    start = time.time()
+    diamond_distances = [diamond_distance.monte_carlo_from_circuit(c, U, 100, p1, gamma1, gamma2) for c in circuits]
+    end = time.time()
+    print("The best accuracy for diamond was: " + str(min(range(max_acc), key=lambda x: diamond_distances[x])))
+    print("It took " + str(end - start) + " seconds")
     print()
 
     # This will take several minutes and is really really inaccurate with any amount of noise
@@ -56,15 +65,16 @@ def run(circuits, U, noise_strength, plot_against_length=False):
     fig, ax1 = plt.subplots()
     lineJ, = ax1.plot(J_fidelities)
     lineS, = ax1.plot(S_fidelities)
+    lineD, = ax1.plot(diamond_distances)
 
     #lineJ_sim, = ax1.plot(J_simulated)
-    lineJ2, = ax1.plot(J_noiseless)
-    ax1.set_ylabel('fidelity', color='tab:blue')
+    #lineJ2, = ax1.plot(J_noiseless)
+    ax1.set_ylabel('distance', color='tab:blue')
     ax1.set_xlabel('accuracy')
-    ax2 = ax1.twinx()
-    line_length, = ax2.plot([len(c) for c in circuits], color='tab:red')
-    ax2.set_ylabel('circuit length', color='tab:red')
-    ax1.legend((lineJ, lineJ2, lineS, line_length), ("J_fidelity (noisy)", "J_fidelity (noiseless)", "S_fidelity (noisy)", "Circuit length"))
+    #ax2 = ax1.twinx()
+    #line_length, = ax2.plot([len(c) for c in circuits], color='tab:red')
+    #ax2.set_ylabel('circuit length', color='tab:red')
+    ax1.legend((lineJ, lineS, lineD), ("J_fidelity", "S_fidelity", "diamond"))
     plt.savefig("out.png")
 
 
@@ -81,4 +91,4 @@ U = np.array([[complex(math.cos(theta / 2), - math.sin(theta / 2)), 0],
               [0, complex(math.cos(theta / 2), math.sin(theta / 2))]])
 # U = np.eye(2)
 
-run(circuits, U, 1e-4, True)
+run(circuits, U, 1e-4)
