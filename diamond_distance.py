@@ -25,30 +25,6 @@ def density_matrix_to_fano(rho):
     return [np.trace(rho @ dirac) for dirac in one_qubit_diracs]
 
 
-def my_inner_product(m1, m2):
-    return np.trace(m1.transpose().conjugate() @ m2)
-
-
-def psi(X, W, A, dim_y):
-    dim_z = W.shape[0] // dim_y
-    reshaped = (W - A @ X @ A.transpose().conjugate()).reshape([dim_y, dim_z, dim_y, dim_z])
-    partial_trace = np.einsum("ijik->jk", reshaped)
-    t = np.trace(X)
-    return np.r_[[[t] + [0 for _ in range(dim_z)]], np.c_[np.zeros(dim_z), partial_trace]]
-
-
-def stinespring(channel):
-    pass  # TODO
-
-
-def solve_with_convex_optimisation(channel):
-    A, B, dim_z = stinespring(channel)
-    dim_x, dim_y = channel[0].shape  # maybe this is the wrong way round?
-    C = block_diag(np.zeros((dim_x, dim_x)), B @ B.transpose().conjugate())
-    D = block_diag(np.eye(1), np.zeros((dim_z, dim_z)))
-    # TODO
-
-
 def pure_density_from_state(state):
     return np.outer(state.conjugate(), state)
 

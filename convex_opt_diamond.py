@@ -1,6 +1,6 @@
 import numpy as np
 import picos as pic
-from noise import amplitude_damping_channel
+from noise import amplitude_damping_channel, phase_damping_channel
 
 
 def solve_with_pic(A, B):
@@ -24,15 +24,13 @@ def solve_with_pic(A, B):
     F.add_constraint('I'|X.real < 1)  # Trace at most 1
     F.add_constraint(X >> 0)
     F.add_constraint(W >> 0)
-    # TODO add the constraint about partial traces over Y
-    F.add_constraint(partial_trace_y(W) << partial_trace_y(A * X * A.conjugate().transpose()))
-    print(F)
-    F.solve(verbose=0, solver='cvxopt')
-    print(F.obj_value())
+    F.add_constraint(partial_trace_y(W) << partial_trace_y(A * X * A.H))
+    F.solve(solver='cvxopt', verbose=0)
+    return F.obj_value().real
 
 
-c = amplitude_damping_channel(0)
-A = np.kron(c[0], np.array([[1], [0]])) + np.kron(c[1], np.array([[0], [1]]))
-B = A
-solve_with_pic(A, B)
-
+for i in range(10):
+    c = amplitude_damping_channel(i/10)
+    A = np.kron(c[0], np.array([[1], [0]])) + np.kron(c[1], np.array([[0], [1]]))
+    B = A
+    print(solve_with_pic(A, B))
