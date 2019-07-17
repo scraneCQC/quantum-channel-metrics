@@ -6,9 +6,10 @@ from density_runner import apply_channel
 from pytket import Circuit
 from itertools import product
 import time
+from typing import Iterable, Any, Dict, Callable
 
 
-def f_pro(channel, unitary):
+def f_pro(channel: Iterable[np.ndarray], unitary: np.ndarray) -> float:
     dim = channel[0].shape[0]
     n_qubits = int(math.log(dim, 2))  # please don't give me qudits, the Pauli's aren't nice
     u_basis = get_diracs(n_qubits)
@@ -24,7 +25,8 @@ def f_pro(channel, unitary):
         sum([np.trace(sigmas[k] @ apply_channel(channel, state_basis[k])) for k in range(dim ** 2)]).real
 
 
-def f_pro_experimental(circuit_string, unitary, p1=0, gamma1=0, gamma2=0, key=None):
+def f_pro_experimental(circuit_string: Iterable[Any], unitary: np.ndarray, p1: float = 0, gamma1: float = 0,
+                       gamma2: float = 0, key: Dict[Any, Callable] = None) -> float:
     dim = unitary.shape[0]
     n_qubits = int(math.log(dim, 2))
     u_basis = get_diracs(n_qubits)
@@ -42,7 +44,8 @@ def f_pro_experimental(circuit_string, unitary, p1=0, gamma1=0, gamma2=0, key=No
     return 1 / dim ** 3 * sum(expectations)
 
 
-def f_pro_simulated(circuit_string, unitary, p1=0, gamma1=0, gamma2=0, key=None):
+def f_pro_simulated(circuit_string: Iterable[Any], unitary: np.ndarray, p1: float = 0, gamma1: float = 0,
+                       gamma2: float = 0, key: Dict[Any, Callable] = None) -> float:
     print(circuit_string)
     dim = unitary.shape[0]
     n_qubits = int(math.log(dim, 2))
@@ -86,13 +89,13 @@ def f_pro_simulated(circuit_string, unitary, p1=0, gamma1=0, gamma2=0, key=None)
     return 1 / dim ** 3 * sum(expectations[k][l] * m[l][k] for l in range(dim ** 2) for k in range(dim ** 2)).real
 
 
-def angle(channel, unitary):
+def angle(channel: Iterable[np.ndarray], unitary: np.ndarray) -> float:
     return math.acos(f_pro(channel, unitary) ** 0.5)
 
 
-def bures(channel, unitary):
+def bures(channel: Iterable[np.ndarray], unitary: np.ndarray) -> float:
     return (2 - 2 * f_pro(channel, unitary) ** 0.5) ** 0.5
 
 
-def C(channel, unitary):  # That's the only name they give it
+def C(channel: Iterable[np.ndarray], unitary: np.ndarray) -> float: # That's the only name they give it
     return (1 - f_pro(channel, unitary)) ** 0.5

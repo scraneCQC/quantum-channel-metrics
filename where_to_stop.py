@@ -7,9 +7,10 @@ import math
 import matplotlib.pyplot as plt
 import time
 from scipy.optimize import curve_fit
+from typing import Any, Iterable
 
 
-def plot_distances(circuits, U, noise_strength):
+def plot_distances(circuits: Iterable[Iterable[Any]], U: np.ndarray, noise_strength: float):
     max_acc = len(circuits)
 
     p1 = noise_strength
@@ -52,7 +53,7 @@ def plot_distances(circuits, U, noise_strength):
     plt.savefig("dist.png")
 
 
-def plot_fidelities(circuits, U, noise_strength):
+def plot_fidelities(circuits: Iterable[Iterable[Any]], U: np.ndarray, noise_strength: float):
     max_acc = len(circuits)
 
     lengths = [len(c) for c in circuits]

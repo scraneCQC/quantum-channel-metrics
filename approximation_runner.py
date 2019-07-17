@@ -11,9 +11,10 @@ import numpy as np
 from openfermion.ops import QubitOperator
 from Pauli import one_qubit_diracs
 from itertools import product
+from typing import Iterable, Any, List, Dict, Callable
 
 
-def load_file(filename):
+def load_file(filename: str) -> List[str]:
     gridsynth = open(filename)
     lines = gridsynth.readlines()
     gridsynth.close()
@@ -29,7 +30,7 @@ ops = {"S": lambda c: c.S(0),
        "I": lambda c: None}
 
 
-def circuit_from_string(op_string, *, n_qubits=1, key=None):
+def circuit_from_string(op_string: Iterable[Any], *, n_qubits: int = 1, key: Dict[Any, Callable] = None) -> Circuit:
     if key is None:
         key = ops
     circuit = Circuit(n_qubits)
@@ -38,7 +39,7 @@ def circuit_from_string(op_string, *, n_qubits=1, key=None):
     return circuit
 
 
-def make_noisy_backend(p1, gamma1, gamma2):
+def make_noisy_backend(p1: float, gamma1: float, gamma2: float) -> AerBackend:
     my_noise_model = NoiseModel()
 
     amp_error = amplitude_damping_error(gamma1)
@@ -54,18 +55,15 @@ def make_noisy_backend(p1, gamma1, gamma2):
     return noisy_backend
 
 
-def run_circuit(op_string, p1, gamma1, gamma2, shots=1000, observable=None, *, prep_circuit=None, key=None, n_qubits=1):
+def run_circuit(op_string: Iterable[Any], p1: float, gamma1: float, gamma2: float, shots: int = 1000, *,
+                prep_circuit: Circuit = None, key: Dict[Any, Callable] = None, n_qubits: int = 1) -> Dict[Any, int]:
     circuit = circuit_from_string(op_string, prep_circuit=prep_circuit, key=key)
-    if observable is None:
-        circuit.measure_all()
+    circuit.measure_all()
 
     # Transform.RebaseToQiskit().apply(circuit)
     # print(dag_to_circuit(tk_to_dagcircuit(circuit)))
 
     noisy_backend = make_noisy_backend(p1, gamma1, gamma2)
-
-    if observable is not None:
-        return noisy_backend.get_operator_expectation_value(circuit, observable, shots=shots)
 
     noisy_shots = noisy_backend.get_counts(circuit=circuit, shots=shots)
     all_outcomes = tuple(product((0, 1), repeat=n_qubits))
@@ -75,7 +73,9 @@ def run_circuit(op_string, p1, gamma1, gamma2, shots=1000, observable=None, *, p
     return noisy_shots
 
 
-def get_pauli_expectation(circuit_string, initial_circuit, pauli_string, n_qubits, *, p1=0, gamma1=0, gamma2=0, shots=100, key=None):
+def get_pauli_expectation(circuit_string: Iterable[Any], initial_circuit: Circuit, pauli_string: str, n_qubits: int, *,
+                          p1: float = 0, gamma1: float = 0, gamma2: float = 0, shots: int = 100,
+                          key: Dict[Any, Callable] = None) -> float:
     if pauli_string == "I" * n_qubits:
         return 1
     circuit = initial_circuit.copy()
@@ -91,8 +91,9 @@ final_circuits["Y"].Sdg(0)
 final_circuits["Y"].H(0)
 
 
-def get_pauli_expectation_v2(circuit_string, initial_circuit, pauli_string, *,
-                             p1=0, gamma1=0, gamma2=0, shots=100, key=None):
+def get_pauli_expectation_v2(circuit_string: Iterable[Any], initial_circuit: Circuit, pauli_string: str, *,
+                             p1: float = 0, gamma1: float = 0, gamma2: float = 0, shots: int = 100,
+                             key: Dict[Any, Callable] = None) -> float:
     n_qubits = len(pauli_string)
     if pauli_string == "I" * n_qubits:
         return 1

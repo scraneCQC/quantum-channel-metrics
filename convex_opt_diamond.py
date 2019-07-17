@@ -3,7 +3,7 @@ import picos as pic
 from noise import amplitude_damping_channel, phase_damping_channel
 
 
-def solve_with_pic(A, B):
+def solve_with_pic(A: np.ndarray, B: np.ndarray) -> float:
     L1 = pic.new_param('L1', np.array([[1, 0, 0, 0], [0, 1, 0, 0]]))
     R1 = pic.new_param('R1', np.array([[1, 0], [0, 1], [0, 0], [0, 0]]))
     L2 = pic.new_param('L2', np.array([[0, 0, 1, 0], [0, 0, 1, 0]]))
@@ -34,3 +34,4 @@ for i in range(10):
     A = np.kron(c[0], np.array([[1], [0]])) + np.kron(c[1], np.array([[0], [1]]))
     B = A
     print(solve_with_pic(A, B))
+

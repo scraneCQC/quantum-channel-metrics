@@ -1,8 +1,9 @@
 from noise import *
 import math
+from typing import Iterable, Any, Dict, Callable
 
 
-def apply_channel(channel, density):
+def apply_channel(channel: Iterable[np.ndarray], density: np.ndarray) -> np.ndarray:
     return sum([e @ density @ e.transpose().conjugate() for e in channel])
 
 
@@ -14,7 +15,8 @@ ops = {"S": np.array([[1, 0], [0, complex(0, 1)]]),
        "I": np.eye(2)}
 
 
-def run_by_matrices(string, start_density, p1=0, gamma1=0, gamma2=0, key=None):
+def run_by_matrices(string: Any, start_density: np.ndarray, p1: float = 0, gamma1: float = 0, gamma2: float = 0,
+                    key: Dict[Any, Callable] = None):
     if key is None:
         key = ops
     n = int(math.log(start_density.shape[0], 2))
