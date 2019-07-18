@@ -46,8 +46,8 @@ def j_distance_experimental(circuit_description: Iterable[Any], unitary: np.ndar
                       jamiolkowski([unitary]))
 
 
-def effect_of_noise(circuit_description: Iterable[Any], circuit_key: Optional[Dict[Any, np.ndarray]] = None, *,
-                            n_qubits: int = 1, noise_channels: Iterable = []) -> float:
+def effect_of_noise(circuit_description: Iterable[Any], noise_channels: Iterable = [], *,
+                    circuit_key: Optional[Dict[Any, np.ndarray]] = None, n_qubits: int = 1) -> float:
     return trace_norm(circuit_to_jamiolkowski(circuit_description, circuit_key, n_qubits=n_qubits, noise_channels=noise_channels),
                       circuit_to_jamiolkowski(circuit_description, circuit_key, n_qubits=n_qubits))
 
