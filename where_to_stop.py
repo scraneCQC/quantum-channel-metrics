@@ -1,5 +1,6 @@
 import approximations
 import J_fidelity
+import J_distance
 import S_fidelity
 import diamond_distance
 import numpy as np
@@ -20,11 +21,18 @@ def plot_distances(circuits: Iterable[Iterable[Any]], U: np.ndarray, noise_stren
     start = time.time()
     J_fidelities = [(2 - 2 * J_fidelity.f_pro_experimental(c, U, p1, gamma1, gamma2) ** 0.5) ** 0.5 for c in circuits]
     end = time.time()
-    print("The best accuracy for J was: " + str(min(range(max_acc), key=lambda x: J_fidelities[x])))
+    print("The best accuracy for J fidelity was: " + str(min(range(max_acc), key=lambda x: J_fidelities[x])))
     print("It took " + str(end-start) + " seconds")
     print()
 
-    #J_noiseless = [(2 - 2 * J_fidelity.f_pro_experimental(c, U) ** 0.5) ** 0.5 for c in circuits]
+
+    start = time.time()
+    J_distances = [J_distance.j_distance_experimental(c, U, p1=p1, gamma1=gamma1, gamma2=gamma2) for c in circuits]
+    end = time.time()
+    print("The best accuracy for J distance was: " + str(min(range(max_acc), key=lambda x: J_distances[x])))
+    print("It took " + str(end-start) + " seconds")
+    print()
+
 
     # This may take a few seconds
     start = time.time()
@@ -43,13 +51,14 @@ def plot_distances(circuits: Iterable[Iterable[Any]], U: np.ndarray, noise_stren
     print()
 
     fig, ax1 = plt.subplots()
-    lineJ, = ax1.plot(J_fidelities)
+    line_jf, = ax1.plot(J_fidelities)
+    line_jd, = ax1.plot(J_distances)
     lineS, = ax1.plot(S_fidelities)
     lineD, = ax1.plot(diamond_distances)
 
     ax1.set_ylabel('distance', color='tab:blue')
     ax1.set_xlabel('accuracy')
-    ax1.legend((lineJ, lineS, lineD), ("J_fidelity", "S_fidelity", "diamond"))
+    ax1.legend((line_jf, line_jd, lineS, lineD), ("J_fidelity", "J distance", "S_fidelity", "diamond"))
     plt.savefig("dist.png")
 
 
@@ -76,6 +85,7 @@ def plot_fidelities(circuits: Iterable[Iterable[Any]], U: np.ndarray, noise_stre
     print("gradient for J is "+str(params1[1]))
     print()
 
+    start=time.time()
     S_fidelities = [S_fidelity.experimental(c, U, 100, p1=p1, gamma1=gamma1, gamma2=gamma2) for c in circuits]
     end = time.time()
     print("The best accuracy for S was: " + str(min(range(max_acc), key=lambda x: S_fidelities[x])))
@@ -93,9 +103,7 @@ def plot_fidelities(circuits: Iterable[Iterable[Any]], U: np.ndarray, noise_stre
 
     plt.figure()
     lineJ2, = plt.plot(lengths, J_noiseless)
-
     lineJ, = plt.plot(lengths, J_fidelities)
-
     lineS, = plt.plot(lengths, S_fidelities)
 
     plt.xlabel('Circuit length')
@@ -105,7 +113,7 @@ def plot_fidelities(circuits: Iterable[Iterable[Any]], U: np.ndarray, noise_stre
     return
 
 
-max_acc = 20
+max_acc = 10
 
 
 theta = math.pi/3
@@ -118,6 +126,6 @@ U = np.array([[complex(math.cos(theta / 2), - math.sin(theta / 2)), 0],
               [0, complex(math.cos(theta / 2), math.sin(theta / 2))]])
 # U = np.eye(2)
 
-plot_distances(circuits, U, 1e-4)
+plot_distances(circuits, U, 1e-3)
 # plot_fidelities(circuits, U, 1e-4)
 
