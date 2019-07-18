@@ -24,7 +24,7 @@ def cnot(i: int, j: int, n_qubits: int) -> np.ndarray:
 
 cnot_key1 = {"cnot" + str(i) + str(i + 1): cnot(i, i + 1, 4) for i in range(3)}
 cnot_key2 = {"cnot" + str(i + 1) + str(i): cnot(i + 1, i, 4) for i in range(3)}
-cnot_key = {**cnot_key1, **cnot_key2, "cnot01-23": np.kron(cnot12, cnot12)}
+cnot_key = {**cnot_key1, **cnot_key2, "cnot01-23": np.kron(cnot12, cnot12), "cnot01-32": np.kron(cnot12, cnot21)}
 
 
 def Rz(angle: float, i: int, n_qubits: int) -> np.ndarray:

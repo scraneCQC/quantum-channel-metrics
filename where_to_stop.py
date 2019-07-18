@@ -57,7 +57,7 @@ def plot_distances(circuits: Iterable[Iterable[Any]], U: np.ndarray, noise_stren
     ax1.set_ylabel('distance', color='tab:blue')
     ax1.set_xlabel('accuracy')
     ax1.legend((line_jf, line_jd, lineS, lineD), ("J_fidelity", "J distance", "S_fidelity", "diamond"))
-    plt.savefig("dist.png")
+    plt.savefig("graphs/dist.png")
 
 
 def plot_fidelities(circuits: Iterable[Iterable[Any]], U: np.ndarray, noise_strength: float):
@@ -75,7 +75,7 @@ def plot_fidelities(circuits: Iterable[Iterable[Any]], U: np.ndarray, noise_stre
     start = time.time()
     J_fidelities = [J_fidelity.f_pro_experimental(c, U, noise_channels) for c in circuits]
     end = time.time()
-    print("The best accuracy for J was: " + str(min(range(max_acc), key=lambda x: J_fidelities[x])))
+    print("The best accuracy for J was: " + str(max(range(max_acc), key=lambda x: J_fidelities[x])))
     print("It took " + str(end - start) + " seconds")
     params1 = curve_fit(model, lengths, J_fidelities)[0]
     print("gradient for J is "+str(params1[1]))
@@ -84,7 +84,7 @@ def plot_fidelities(circuits: Iterable[Iterable[Any]], U: np.ndarray, noise_stre
     start=time.time()
     S_fidelities = [S_fidelity.experimental(c, U, 100, noise_channels) for c in circuits]
     end = time.time()
-    print("The best accuracy for S was: " + str(min(range(max_acc), key=lambda x: S_fidelities[x])))
+    print("The best accuracy for S was: " + str(max(range(max_acc), key=lambda x: S_fidelities[x])))
     print("It took " + str(end - start) + " seconds")
     params2 = curve_fit(model, lengths, S_fidelities)[0]
     print("gradient for S is " + str(params2[1]))
@@ -98,18 +98,18 @@ def plot_fidelities(circuits: Iterable[Iterable[Any]], U: np.ndarray, noise_stre
     # print("It took " + str(end-start) + " seconds")
 
     plt.figure()
-    lineJ2, = plt.plot(lengths, J_noiseless)
-    lineJ, = plt.plot(lengths, J_fidelities)
-    lineS, = plt.plot(lengths, S_fidelities)
+    lineJ2, = plt.plot( J_noiseless)
+    lineJ, = plt.plot(J_fidelities)
+    lineS, = plt.plot(S_fidelities)
 
-    plt.xlabel('Circuit length')
+    plt.xlabel('Accuracy')
     plt.ylabel('Fidelity')
     plt.legend((lineJ2, lineJ, lineS), ('J_fidelity (noiseless)', 'J_fidelity', 'S_fidelity'))
-    plt.savefig('fid.png')
+    plt.savefig('graphs/fid.png')
     return
 
 
-max_acc = 10
+max_acc = 20
 
 
 theta = math.pi/3

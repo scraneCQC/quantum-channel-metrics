@@ -6,7 +6,7 @@ from noise import standard_noise_channels
 
 circuit1 = ["cnot01", "cnot12", "cnot23", "Rz3", "cnot23", "cnot12", "cnot01"]  # Original phase gadget
 circuit2 = ["cnot01", "cnot32", "cnot12", "Rz2", "cnot12", "cnot32", "cnot01"]  # Balanced tree
-circuit3 = ["cnot01-23", "cnot12", "Rz2", "cnot12", "cnot01-23"]  # Parallel CNOTs in balanced tree
+circuit3 = ["cnot01-32", "cnot12", "Rz2", "cnot12", "cnot01-32"]  # Parallel CNOTs in balanced tree
 
 
 theta = math.pi / 4
