@@ -51,6 +51,12 @@ def j_distance_experimental(circuit_description: Iterable[Any], unitary: np.ndar
                                               gamma2=gamma2),
                       jamiolkowski([unitary]))
 
+def effect_of_noise(circuit_description: Iterable[Any], circuit_key: Optional[Dict[Any, np.ndarray]] = None, *,
+                            n_qubits: int = 1, p1: float = 0, gamma1: float = 0, gamma2: float = 0,) -> float:
+    return trace_norm(circuit_to_jamiolkowski(circuit_description, circuit_key, n_qubits=n_qubits, p1=p1, gamma1=gamma1,
+                                              gamma2=gamma2),
+                      circuit_to_jamiolkowski(circuit_description, circuit_key, n_qubits=n_qubits))
+
 # "so far as we are aware, experimentally determining D_pro requires doing full process
 # tomography, which for a d-dimensional quantum system
 # requires the estimation of d ** 4 − d ** 2 observable averages"

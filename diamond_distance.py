@@ -4,7 +4,7 @@ import random
 from Pauli import *
 from density_runner import apply_channel, run_by_matrices, ops
 import math
-from typing import List, Iterable, Any, Dict, Callable
+from typing import List, Iterable, Any, Dict, Optional
 
 
 def trace_norm(m1: np.ndarray, m2: np.ndarray) -> float:
@@ -49,7 +49,7 @@ def monte_carlo_f_algorithm(channel1: Iterable[np.ndarray], channel2: Iterable[n
 
 def monte_carlo_from_circuit(circuit_string: Iterable[Any], unitary: np.ndarray, n_trials: int,
                              p1: float = 0, gamma1: float = 0, gamma2: float = 0,
-                             circuit_key: Dict[Any, Callable] = None) -> float:
+                             circuit_key: Dict[Any, np.ndarray] = None) -> float:
     if circuit_key is None:
         circuit_key = ops
     dim = unitary.shape[0]
@@ -62,3 +62,13 @@ def monte_carlo_from_circuit(circuit_string: Iterable[Any], unitary: np.ndarray,
                             apply_channel([unitary], xi)) for xi in random_densities(2 ** (k + 1) * dim, n_trials)])
         max_norm = max(max_norm, with_ancilla)
     return max_norm
+
+
+def effect_of_noise(circuit_description: Iterable[Any], p1: float, gamma1: float, gamma2: float,  n_qubits: int = 1,
+                    circuit_key: Optional[Dict[Any, np.ndarray]] = None) -> float:
+    d = 2 ** n_qubits
+    unitary = np.eye(d)
+    for s in circuit_description[::-1]:
+        unitary = circuit_key[s] @ unitary
+    return monte_carlo_from_circuit(circuit_description, unitary, 100, p1=p1, gamma1=gamma1, gamma2=gamma2, circuit_key=circuit_key)
+
