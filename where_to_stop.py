@@ -9,17 +9,16 @@ import matplotlib.pyplot as plt
 import time
 from scipy.optimize import curve_fit
 from typing import Any, Iterable
+from noise import standard_noise_channels
 
 
 def plot_distances(circuits: Iterable[Iterable[Any]], U: np.ndarray, noise_strength: float):
     max_acc = len(circuits)
 
-    p1 = noise_strength
-    gamma1 = noise_strength
-    gamma2 = noise_strength
+    noise_channels = standard_noise_channels(noise_strength)
 
     start = time.time()
-    J_fidelities = [(2 - 2 * J_fidelity.f_pro_experimental(c, U, p1, gamma1, gamma2) ** 0.5) ** 0.5 for c in circuits]
+    J_fidelities = [(2 - 2 * J_fidelity.f_pro_experimental(c, U, noise_channels) ** 0.5) ** 0.5 for c in circuits]
     end = time.time()
     print("The best accuracy for J fidelity was: " + str(min(range(max_acc), key=lambda x: J_fidelities[x])))
     print("It took " + str(end-start) + " seconds")
@@ -27,7 +26,7 @@ def plot_distances(circuits: Iterable[Iterable[Any]], U: np.ndarray, noise_stren
 
 
     start = time.time()
-    J_distances = [J_distance.j_distance_experimental(c, U, p1=p1, gamma1=gamma1, gamma2=gamma2) for c in circuits]
+    J_distances = [J_distance.j_distance_experimental(c, U, noise_channels) for c in circuits]
     end = time.time()
     print("The best accuracy for J distance was: " + str(min(range(max_acc), key=lambda x: J_distances[x])))
     print("It took " + str(end-start) + " seconds")
@@ -36,7 +35,7 @@ def plot_distances(circuits: Iterable[Iterable[Any]], U: np.ndarray, noise_stren
 
     # This may take a few seconds
     start = time.time()
-    S_fidelities = [(2 - 2 * S_fidelity.experimental(c, U, 100, p1=p1, gamma1=gamma1, gamma2=gamma2) ** 0.5) ** 0.5
+    S_fidelities = [(2 - 2 * S_fidelity.experimental(c, U, 100, noise_channels) ** 0.5) ** 0.5
                     for c in circuits]
     end = time.time()
     print("The best accuracy for S was: " + str(min(range(max_acc), key=lambda x: S_fidelities[x])))
@@ -44,7 +43,7 @@ def plot_distances(circuits: Iterable[Iterable[Any]], U: np.ndarray, noise_stren
     print()
 
     start = time.time()
-    diamond_distances = [diamond_distance.monte_carlo_from_circuit(c, U, 1000, p1, gamma1, gamma2) for c in circuits]
+    diamond_distances = [diamond_distance.monte_carlo_from_circuit(c, U, 1000, noise_channels) for c in circuits]
     end = time.time()
     print("The best accuracy for diamond was: " + str(min(range(max_acc), key=lambda x: diamond_distances[x])))
     print("It took " + str(end - start) + " seconds")
@@ -67,9 +66,7 @@ def plot_fidelities(circuits: Iterable[Iterable[Any]], U: np.ndarray, noise_stre
 
     lengths = [len(c) for c in circuits]
 
-    p1 = noise_strength
-    gamma1 = noise_strength
-    gamma2 = noise_strength
+    noise_channels = standard_noise_channels(noise_strength)
 
     J_noiseless = [J_fidelity.f_pro_experimental(c, U) for c in circuits]
 
@@ -77,7 +74,7 @@ def plot_fidelities(circuits: Iterable[Iterable[Any]], U: np.ndarray, noise_stre
         return 1 - (a * 0.5 ** n) + b * noise_strength * n
 
     start = time.time()
-    J_fidelities = [J_fidelity.f_pro_experimental(c, U, p1, gamma1, gamma2) for c in circuits]
+    J_fidelities = [J_fidelity.f_pro_experimental(c, U, noise_channels) for c in circuits]
     end = time.time()
     print("The best accuracy for J was: " + str(min(range(max_acc), key=lambda x: J_fidelities[x])))
     print("It took " + str(end - start) + " seconds")
@@ -86,7 +83,7 @@ def plot_fidelities(circuits: Iterable[Iterable[Any]], U: np.ndarray, noise_stre
     print()
 
     start=time.time()
-    S_fidelities = [S_fidelity.experimental(c, U, 100, p1=p1, gamma1=gamma1, gamma2=gamma2) for c in circuits]
+    S_fidelities = [S_fidelity.experimental(c, U, 100, noise_channels) for c in circuits]
     end = time.time()
     print("The best accuracy for S was: " + str(min(range(max_acc), key=lambda x: S_fidelities[x])))
     print("It took " + str(end - start) + " seconds")
@@ -96,7 +93,7 @@ def plot_fidelities(circuits: Iterable[Iterable[Any]], U: np.ndarray, noise_stre
 
     # This will take several minutes and is really really inaccurate with any amount of noise
     # start = time.time()
-    # J_simulated = [J_fidelity.f_pro_simulated(c, U, p1, gamma1, gamma2) for c in circuits]
+    # J_simulated = [J_fidelity.f_pro_simulated(c, U, noise_strength, noise_strength, noise_strength) for c in circuits]
     # end = time.time()
     # print("The best accuracy for simulation was: " + str(max(range(max_acc), key=lambda x: J_simulated[x])))
     # print("It took " + str(end-start) + " seconds")
@@ -126,6 +123,6 @@ U = np.array([[complex(math.cos(theta / 2), - math.sin(theta / 2)), 0],
               [0, complex(math.cos(theta / 2), math.sin(theta / 2))]])
 # U = np.eye(2)
 
-plot_distances(circuits, U, 1e-3)
-# plot_fidelities(circuits, U, 1e-4)
+# plot_distances(circuits, U, 1e-3)
+plot_fidelities(circuits, U, 1e-4)
 

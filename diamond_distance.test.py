@@ -1,8 +1,7 @@
-from diamond_distance import monte_carlo_f_algorithm, psi
+from diamond_distance import monte_carlo_f_algorithm
 from noise import *
 import math
 
-"""
 print(monte_carlo_f_algorithm([np.kron(X, X)], identity_channel(2), 100))
 
 
@@ -27,9 +26,3 @@ print(monte_carlo_f_algorithm(amplitude_damping, identity_channel(1), 100))
 gamma2 = 0.2
 phase_damping = phase_damping_channel(gamma2)
 print(monte_carlo_f_algorithm(phase_damping, identity_channel(1), 100))
-"""
-
-A = np.array([[1, 0], [1, 2], [3, 1], [0, 4]])
-X = np.eye(2)
-W = np.eye(4)
-print(psi(X, W, A, 2))

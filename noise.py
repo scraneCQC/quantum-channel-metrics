@@ -68,3 +68,8 @@ def single_qubit_phase_damping_channel(gamma: float, index: int, n_qubits: int) 
         channel = [np.kron(channel[i], np.eye(2)) for i in range(2)]
     return channel
 
+
+def standard_noise_channels(noise_strength: float, n_qubits: int = 1) -> List[List[np.ndarray]]:
+    return [depolarising_channel(noise_strength, n_qubits),
+            amplitude_damping_channel(noise_strength, n_qubits),
+            phase_damping_channel(noise_strength, n_qubits)]

@@ -25,29 +25,30 @@ def f_min(channel1: Iterable[np.ndarray], channel2: Iterable[np.ndarray], n_tria
     return min_fidelity
 
 
-def experimental(circuit_string: Iterable[Any], unitary: np.ndarray, n_trials: int,
-                             p1: float = 0, gamma1: float = 0, gamma2: float = 0,
-                             key: Dict[Any, np.ndarray] = None) -> float:
+def experimental(circuit_string: Iterable[Any], unitary: np.ndarray, n_trials: int, noise_channels: Iterable = [],
+                 key: Dict[Any, np.ndarray] = None) -> float:
     dim = unitary.shape[0]
     if key is None:
         key = ops
-    min_fidelity = min([fidelity(run_by_matrices(circuit_string, xi, p1, gamma1, gamma2, key),
+    min_fidelity = min([fidelity(run_by_matrices(circuit_string, xi, noise_channels, key),
                                  apply_channel([unitary], xi)) for xi in random_densities(dim, n_trials)])
     for i in range(int(math.log(dim, 2))):
         key = {k: np.kron(v, np.eye(2)) for k, v in key.items()}
         unitary = np.kron(unitary, np.eye(2))
-        with_ancilla = min([fidelity(run_by_matrices(circuit_string, xi, p1, gamma1, gamma2, key=key),
+        noise_channels = [[np.kron(e, np.eye(2)) for e in c]for c in noise_channels]
+        with_ancilla = min([fidelity(run_by_matrices(circuit_string, xi, noise_channels, key=key),
                             apply_channel([unitary], xi)) for xi in random_densities(2 ** (i + 1) * dim, n_trials)])
         min_fidelity = min(min_fidelity, with_ancilla)
     return min_fidelity
 
-def effect_of_noise(circuit_description: Iterable[Any], p1: float, gamma1: float, gamma2: float,  n_qubits: int = 1,
+
+def effect_of_noise(circuit_description: Iterable[Any], noise_channels: Iterable = [],  n_qubits: int = 1,
                     circuit_key: Optional[Dict[Any, np.ndarray]] = None) -> float:
     d = 2 ** n_qubits
     unitary = np.eye(d)
     for s in circuit_description[::-1]:
         unitary = circuit_key[s] @ unitary
-    return 1 - experimental(circuit_description, unitary, 100, p1=p1, gamma1=gamma1, gamma2=gamma2, key=circuit_key)
+    return 1 - experimental(circuit_description, unitary, 100, noise_channels, key=circuit_key)
 
 
 def angle(channel1: Iterable[np.ndarray], channel2: Iterable[np.ndarray]) -> float:

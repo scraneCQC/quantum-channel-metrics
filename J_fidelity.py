@@ -25,8 +25,8 @@ def f_pro(channel: Iterable[np.ndarray], unitary: np.ndarray) -> float:
         sum([np.trace(sigmas[k] @ apply_channel(channel, state_basis[k])) for k in range(dim ** 2)]).real
 
 
-def f_pro_experimental(circuit_string: Iterable[Any], unitary: np.ndarray, p1: float = 0, gamma1: float = 0,
-                       gamma2: float = 0, key: Dict[Any, np.ndarray] = None) -> float:
+def f_pro_experimental(circuit_string: Iterable[Any], unitary: np.ndarray, noise_channels: Iterable = [],
+                       key: Dict[Any, np.ndarray] = None) -> float:
     dim = unitary.shape[0]
     n_qubits = int(math.log(dim, 2))
     u_basis = get_diracs(n_qubits)
@@ -38,14 +38,14 @@ def f_pro_experimental(circuit_string: Iterable[Any], unitary: np.ndarray, p1: f
                  np.outer([0] + [1 for _ in range(dim ** 2 - 1)], [1] + [0 for _ in range(dim ** 2 - 1)]))
     sigmas = [sum([a[k][l] * unitary @ u_basis[k] @ unitary.transpose().conjugate()
                    for k in range(dim ** 2)]) for l in range(dim ** 2)]
-    expectations = [np.trace(sigmas[k] @ density_runner.run_by_matrices(circuit_string, state_basis[k], p1, gamma1, gamma2, key))
+    expectations = [np.trace(sigmas[k] @ density_runner.run_by_matrices(circuit_string, state_basis[k], noise_channels, key))
                     .real for k in range(dim ** 2)]
     # print(expectations)
     return 1 / dim ** 3 * sum(expectations)
 
 
 def f_pro_simulated(circuit_string: Iterable[Any], unitary: np.ndarray, p1: float = 0, gamma1: float = 0,
-                       gamma2: float = 0, key: Dict[Any, np.ndarray] = None) -> float:
+                    gamma2: float = 0, key: Dict[Any, np.ndarray] = None) -> float:
     print(circuit_string)
     dim = unitary.shape[0]
     n_qubits = int(math.log(dim, 2))
@@ -89,13 +89,13 @@ def f_pro_simulated(circuit_string: Iterable[Any], unitary: np.ndarray, p1: floa
     return 1 / dim ** 3 * sum(expectations[k][l] * m[l][k] for l in range(dim ** 2) for k in range(dim ** 2)).real
 
 
-def effect_of_noise(circuit_description: Iterable[Any], p1: float, gamma1: float, gamma2: float,  n_qubits: int = 1,
+def effect_of_noise(circuit_description: Iterable[Any], noise_channels: Iterable = [],  n_qubits: int = 1,
                     circuit_key: Optional[Dict[Any, np.ndarray]] = None) -> float:
     d = 2 ** n_qubits
     unitary = np.eye(d)
     for s in circuit_description[::-1]:
         unitary = circuit_key[s] @ unitary
-    return 1 - f_pro_experimental(circuit_description, unitary, p1=p1, gamma1=gamma1, gamma2=gamma2, key=circuit_key)
+    return 1 - f_pro_experimental(circuit_description, unitary, noise_channels, key=circuit_key)
 
 
 def angle(channel: Iterable[np.ndarray], unitary: np.ndarray) -> float:

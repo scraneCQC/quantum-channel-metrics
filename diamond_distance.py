@@ -48,27 +48,28 @@ def monte_carlo_f_algorithm(channel1: Iterable[np.ndarray], channel2: Iterable[n
 
 
 def monte_carlo_from_circuit(circuit_string: Iterable[Any], unitary: np.ndarray, n_trials: int,
-                             p1: float = 0, gamma1: float = 0, gamma2: float = 0,
+                             noise_channels: Optional[Iterable] = None,
                              circuit_key: Dict[Any, np.ndarray] = None) -> float:
     if circuit_key is None:
         circuit_key = ops
     dim = unitary.shape[0]
-    max_norm = max([trace_norm(run_by_matrices(circuit_string, xi, p1, gamma1, gamma2, circuit_key), apply_channel([unitary], xi))
+    max_norm = max([trace_norm(run_by_matrices(circuit_string, xi, noise_channels, circuit_key), apply_channel([unitary], xi))
                     for xi in random_densities(dim, n_trials)])
     for k in range(int(math.log(dim, 2))):
         circuit_key = {i: np.kron(v, np.eye(2)) for i, v in circuit_key.items()}
         unitary = np.kron(unitary, np.eye(2))
-        with_ancilla = max([trace_norm(run_by_matrices(circuit_string, xi, p1, gamma1, gamma2, circuit_key),
+        noise_channels = [[np.kron(e, np.eye(2)) for e in c] for c in noise_channels]
+        with_ancilla = max([trace_norm(run_by_matrices(circuit_string, xi, noise_channels, circuit_key),
                             apply_channel([unitary], xi)) for xi in random_densities(2 ** (k + 1) * dim, n_trials)])
         max_norm = max(max_norm, with_ancilla)
     return max_norm
 
 
-def effect_of_noise(circuit_description: Iterable[Any], p1: float, gamma1: float, gamma2: float,  n_qubits: int = 1,
+def effect_of_noise(circuit_description: Iterable[Any], noise_channels: Iterable,  n_qubits: int = 1,
                     circuit_key: Optional[Dict[Any, np.ndarray]] = None) -> float:
     d = 2 ** n_qubits
     unitary = np.eye(d)
     for s in circuit_description[::-1]:
         unitary = circuit_key[s] @ unitary
-    return monte_carlo_from_circuit(circuit_description, unitary, 100, p1=p1, gamma1=gamma1, gamma2=gamma2, circuit_key=circuit_key)
+    return monte_carlo_from_circuit(circuit_description, unitary, 100, noise_channels, circuit_key=circuit_key)
 
