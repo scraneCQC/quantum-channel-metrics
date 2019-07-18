@@ -24,7 +24,6 @@ def plot_distances(circuits: Iterable[Iterable[Any]], U: np.ndarray, noise_stren
     print("It took " + str(end-start) + " seconds")
     print()
 
-
     start = time.time()
     J_distances = [J_distance.j_distance_experimental(c, U, noise_channels) for c in circuits]
     end = time.time()
