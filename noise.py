@@ -22,11 +22,32 @@ def depolarising_channel(p1: float, n_qubits: int = 1) -> List[np.ndarray]:
     return channel
 
 
+def single_qubit_depolarising_channel(p1: float, index: int, n_qubits: int) -> List[np.ndarray]:
+    basic_channel = [p * M for p, M in zip(
+        [(1 - p1) ** 0.5, (p1 / 3) ** 0.5, (p1 / 3) ** 0.5, (p1 / 3) ** 0.5], one_qubit_diracs)]
+    channel = basic_channel
+    for _ in range(index):
+        channel = [np.kron(np.eye(2), channel[i]) for i in range(4)]
+    for _ in range(n_qubits - index - 1):
+        channel = [np.kron(channel[i], np.eye(2)) for i in range(4)]
+    return channel
+
+
 def amplitude_damping_channel(gamma: float, n_qubits: int = 1) -> List[np.ndarray]:
     basic_channel = [np.array([[1, 0], [0, (1 - gamma) ** 0.5]]), np.array([[0, gamma ** 0.5], [0, 0]])]
     channel = basic_channel
     for _ in range(n_qubits - 1):
         channel = [np.kron(channel[i], basic_channel[i]) for i in range(2)]
+    return channel
+
+
+def single_qubit_amplitude_damping_channel(gamma: float, index: int, n_qubits: int) -> List[np.ndarray]:
+    basic_channel = [np.array([[1, 0], [0, (1 - gamma) ** 0.5]]), np.array([[0, gamma ** 0.5], [0, 0]])]
+    channel = basic_channel
+    for _ in range(index):
+        channel = [np.kron(np.eye(2), channel[i]) for i in range(2)]
+    for _ in range(n_qubits - index - 1):
+        channel = [np.kron(channel[i], np.eye(2)) for i in range(2)]
     return channel
 
 
@@ -36,3 +57,14 @@ def phase_damping_channel(gamma: float, n_qubits: int = 1) -> List[np.ndarray]:
     for _ in range(n_qubits - 1):
         channel = [np.kron(channel[i], basic_channel[i]) for i in range(2)]
     return channel
+
+
+def single_qubit_phase_damping_channel(gamma: float, index: int, n_qubits: int) -> List[np.ndarray]:
+    basic_channel = [np.array([[1, 0], [0, (1 - gamma) ** 0.5]]), np.array([[0, 0], [0, gamma ** 0.5]])]
+    channel = basic_channel
+    for _ in range(index):
+        channel = [np.kron(np.eye(2), channel[i]) for i in range(2)]
+    for _ in range(n_qubits - index - 1):
+        channel = [np.kron(channel[i], np.eye(2)) for i in range(2)]
+    return channel
+
