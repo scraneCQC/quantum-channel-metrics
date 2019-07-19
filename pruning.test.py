@@ -71,8 +71,8 @@ def plot_tolerances():
 
 
 def plot_noise_strength():
-    noises = [0.005 * i for i in range(20)]
-    diffs = [run(3, 10, find_threshold(n), n, 100)[0] for n in noises]
+    noises = [0.005 * i for i in range(100)]
+    diffs = [run(2, 5, find_threshold(n), n, 100)[0] for n in noises]
 
     plt.figure()
     plt.plot(noises, diffs)
