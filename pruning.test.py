@@ -2,20 +2,45 @@ from pruning_circuits import generate_random_circuit, prune_circuit
 import J_fidelity
 from noise import standard_noise_channels
 import numpy as np
+from typing import Tuple
+import matplotlib.pyplot as plt
 
 
-circuit, key = generate_random_circuit(3, 10)
-print(circuit)
-pruned = prune_circuit(circuit, 0.2)
-print(pruned)
-print("Pruning removed", len(circuit) - len(pruned), "gates")
+def run(n_qubits: int, circuit_length: int, tolerance: float, noise_strength: float, n_trials: int) \
+        -> Tuple[float, float]:
+    total = 0
+    total_gates_cut = 0
+    for _ in range(n_trials):
+        circuit, key = generate_random_circuit(n_qubits, circuit_length)
+        pruned = prune_circuit(circuit, tolerance)
+        gates_cut = len(circuit) - len(pruned)
+        total_gates_cut += gates_cut
+
+        unitary = np.eye(2 ** n_qubits)
+        for s in circuit[::-1]:
+            unitary = key[s] @ unitary
+
+        pruned_unitary = np.eye(2 ** n_qubits)
+        for s in pruned[::-1]:
+            pruned_unitary = key[s] @ pruned_unitary
+
+        noise = standard_noise_channels(noise_strength, n_qubits)
+        original_f = J_fidelity.f_pro_experimental(circuit, unitary, noise, key)
+        pruned_f = J_fidelity.f_pro_experimental(pruned, unitary, noise, key)
+        difference = pruned_f - original_f
+        total += difference
+    return total / n_trials, total_gates_cut / n_trials
 
 
-unitary = np.eye(8)
-for s in circuit[::-1]:
-    unitary = key[s] @ unitary
+def plot_tolerances():
+    diffs = [run(3, 10, i/10, 0.01, 100)[0] for i in range(10)]
+
+    plt.figure()
+    plt.plot([i/10 for i in range(10)], diffs)
+
+    plt.xlabel('Tolerance')
+    plt.ylabel('Improvement in fidelity')
+    plt.savefig('graphs/pruning_tolerance.png')
 
 
-noise = standard_noise_channels(0.01, 3)
-print(J_fidelity.f_pro_experimental(circuit, unitary, noise, key))
-print(J_fidelity.f_pro_experimental(pruned, unitary, noise, key))
+plot_tolerances()

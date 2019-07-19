@@ -36,8 +36,8 @@ def generate_random_circuit(n_qubits: int, n_gates: int) -> Tuple[List[str], Dic
             s = "rz" + str(i) + "-" + str(theta)
         desc.append(s)
         key.update({s: gate})
-    return (desc, key)
+    return desc, key
 
 
 def prune_circuit(desc: Iterable, tolerance: float) -> Iterable:
-    return [s for s in desc if not (s[0] == "r" and float(s.split("-")[1]) < tolerance)]
+    return [s for s in desc if not (s[0] == "r" and float(s.split("-", 1)[1]) < tolerance)]
