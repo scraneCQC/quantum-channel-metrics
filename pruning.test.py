@@ -1,4 +1,4 @@
-from pruning_circuits import generate_random_circuit, prune_circuit, prune_circuit_v2
+from pruning_circuits import generate_random_circuit, prune_circuit, prune_circuit_v2, find_threshold
 import J_fidelity
 from noise import standard_noise_channels
 import numpy as np
@@ -43,10 +43,6 @@ def run_v2(n_qubits: int, circuit_length: int, noise_strength: float, n_trials: 
         for s in circuit[::-1]:
             unitary = key[s] @ unitary
 
-        pruned_unitary = np.eye(2 ** n_qubits)
-        for s in pruned[::-1]:
-            pruned_unitary = key[s] @ pruned_unitary
-
         noise = standard_noise_channels(noise_strength, n_qubits)
         original_f = J_fidelity.f_pro_experimental(circuit, unitary, noise, key)
         pruned_f = J_fidelity.f_pro_experimental(pruned, unitary, noise, key)
@@ -75,10 +71,11 @@ def plot_tolerances():
 
 
 def plot_noise_strength():
-    diffs = [run_v2(3, 10, 0.1 ** (i + 1), 100)[0] for i in range(6)]
+    noises = [0.005 * i for i in range(20)]
+    diffs = [run(3, 10, find_threshold(n), n, 100)[0] for n in noises]
 
     plt.figure()
-    plt.semilogx([0.1 ** (i + 1) for i in range(6)], diffs)
+    plt.plot(noises, diffs)
 
     plt.xlabel('Noise strength')
     plt.ylabel('Improvement in fidelity')
@@ -86,4 +83,7 @@ def plot_noise_strength():
 
 
 plot_noise_strength()
+
+
+
 

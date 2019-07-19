@@ -60,3 +60,15 @@ def is_it_worth_it(unitary: np.ndarray, noise_strength: float) -> bool:
 
 def prune_circuit_v2(desc: Iterable, key: Dict[Any, np.ndarray], noise_strength: float) -> Iterable:
     return [s for s in desc if is_it_worth_it(key[s], noise_strength)]
+
+
+def find_threshold(noise_strength):
+    min_angle = 0
+    max_angle = 1
+    for _ in range(100):
+        mid_angle = (min_angle + max_angle) / 2
+        if is_it_worth_it(Rz(mid_angle, 0, 1), noise_strength):
+            max_angle = mid_angle
+        else:
+            min_angle = mid_angle
+    return min_angle
