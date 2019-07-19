@@ -10,6 +10,8 @@ def run(n_qubits: int, circuit_length: int, tolerance: float, noise_strength: fl
         -> Tuple[float, float]:
     total = 0
     total_gates_cut = 0
+    noise = standard_noise_channels(noise_strength, n_qubits)
+
     for _ in range(n_trials):
         circuit, key = generate_random_circuit(n_qubits, circuit_length)
         pruned = prune_circuit(circuit, tolerance)
@@ -24,7 +26,6 @@ def run(n_qubits: int, circuit_length: int, tolerance: float, noise_strength: fl
         for s in pruned[::-1]:
             pruned_unitary = key[s] @ pruned_unitary
 
-        noise = standard_noise_channels(noise_strength, n_qubits)
         original_f = J_fidelity.f_pro_experimental(circuit, unitary, noise, key)
         pruned_f = J_fidelity.f_pro_experimental(pruned, unitary, noise, key)
         difference = pruned_f - original_f
@@ -33,6 +34,7 @@ def run(n_qubits: int, circuit_length: int, tolerance: float, noise_strength: fl
 
 
 def run_v2(n_qubits: int, circuit_length: int, noise_strength: float, n_trials: int) -> Tuple[float, float]:
+    noise = standard_noise_channels(noise_strength, n_qubits)
 
     def do_once():
         circuit, key = generate_random_circuit(n_qubits, circuit_length)
@@ -43,7 +45,6 @@ def run_v2(n_qubits: int, circuit_length: int, noise_strength: float, n_trials: 
         for s in circuit[::-1]:
             unitary = key[s] @ unitary
 
-        noise = standard_noise_channels(noise_strength, n_qubits)
         original_f = J_fidelity.f_pro_experimental(circuit, unitary, noise, key)
         pruned_f = J_fidelity.f_pro_experimental(pruned, unitary, noise, key)
         difference = pruned_f - original_f
@@ -72,7 +73,7 @@ def plot_tolerances():
 
 def plot_noise_strength():
     noises = [0.005 * i for i in range(100)]
-    diffs = [run(2, 5, find_threshold(n), n, 100)[0] for n in noises]
+    diffs = [run(3, 5, find_threshold(n), n, 100)[0] for n in noises]
 
     plt.figure()
     plt.plot(noises, diffs)
