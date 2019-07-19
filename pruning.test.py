@@ -35,6 +35,9 @@ def run(n_qubits: int, circuit_length: int, tolerance: float, noise_strength: fl
 def plot_tolerances():
     diffs = [run(3, 10, i/10, 0.01, 100)[0] for i in range(10)]
 
+    best = max(list(range(10)), key=lambda i: diffs[i])
+    print("The best tolerance threshold was", best / 10)
+
     plt.figure()
     plt.plot([i/10 for i in range(10)], diffs)
 
@@ -43,4 +46,15 @@ def plot_tolerances():
     plt.savefig('graphs/pruning_tolerance.png')
 
 
-plot_tolerances()
+def plot_noise_strength():
+    diffs = [run(3, 10, 0.1, 0.1 ** (i + 1), 100)[0] for i in range(10)]
+
+    plt.figure()
+    plt.semilogx([0.1 ** (i + 1) for i in range(10)], diffs)
+
+    plt.xlabel('Noise strength')
+    plt.ylabel('Improvement in fidelity')
+    plt.savefig('graphs/pruning_noise.png')
+
+
+plot_noise_strength()
