@@ -1,4 +1,4 @@
-from pruning_circuits import generate_random_circuit, prune_circuit
+from pruning_circuits import generate_random_circuit, prune_circuit, prune_circuit_v2
 import J_fidelity
 from noise import standard_noise_channels
 import numpy as np
@@ -32,8 +32,36 @@ def run(n_qubits: int, circuit_length: int, tolerance: float, noise_strength: fl
     return total / n_trials, total_gates_cut / n_trials
 
 
+def run_v2(n_qubits: int, circuit_length: int, noise_strength: float, n_trials: int) -> Tuple[float, float]:
+
+    def do_once():
+        circuit, key = generate_random_circuit(n_qubits, circuit_length)
+        pruned = prune_circuit_v2(circuit, key, noise_strength)
+        gates_cut = len(circuit) - len(pruned)
+
+        unitary = np.eye(2 ** n_qubits)
+        for s in circuit[::-1]:
+            unitary = key[s] @ unitary
+
+        pruned_unitary = np.eye(2 ** n_qubits)
+        for s in pruned[::-1]:
+            pruned_unitary = key[s] @ pruned_unitary
+
+        noise = standard_noise_channels(noise_strength, n_qubits)
+        original_f = J_fidelity.f_pro_experimental(circuit, unitary, noise, key)
+        pruned_f = J_fidelity.f_pro_experimental(pruned, unitary, noise, key)
+        difference = pruned_f - original_f
+        return difference, gates_cut
+
+    res = [do_once() for _ in range(n_trials)]
+    total = sum([r[0] for r in res])
+    total_gates_cut = sum([r[1] for r in res])
+
+    return total / n_trials, total_gates_cut / n_trials
+
+
 def plot_tolerances():
-    diffs = [run(3, 10, i/10, 0.01, 100)[0] for i in range(10)]
+    diffs = [run(2, 100, i/10, 0.01, 100)[0] for i in range(10)]
 
     best = max(list(range(10)), key=lambda i: diffs[i])
     print("The best tolerance threshold was", best / 10)
@@ -47,10 +75,10 @@ def plot_tolerances():
 
 
 def plot_noise_strength():
-    diffs = [run(3, 10, 0.1, 0.1 ** (i + 1), 100)[0] for i in range(10)]
+    diffs = [run_v2(3, 10, 0.1 ** (i + 1), 100)[0] for i in range(6)]
 
     plt.figure()
-    plt.semilogx([0.1 ** (i + 1) for i in range(10)], diffs)
+    plt.semilogx([0.1 ** (i + 1) for i in range(6)], diffs)
 
     plt.xlabel('Noise strength')
     plt.ylabel('Improvement in fidelity')
@@ -58,3 +86,4 @@ def plot_noise_strength():
 
 
 plot_noise_strength()
+

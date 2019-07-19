@@ -1,8 +1,11 @@
 import random
 import math
 from common_gates import cnot, Rx, Ry, Rz
-from typing import Iterable, Tuple, Dict, List
+from typing import Iterable, Tuple, Dict, List, Any
 import numpy as np
+import Pauli
+import J_fidelity
+from noise import standard_noise_channels
 
 
 def generate_random_circuit(n_qubits: int, n_gates: int) -> Tuple[List[str], Dict[str, np.ndarray]]:
@@ -41,3 +44,19 @@ def generate_random_circuit(n_qubits: int, n_gates: int) -> Tuple[List[str], Dic
 
 def prune_circuit(desc: Iterable, tolerance: float) -> Iterable:
     return [s for s in desc if not (s[0] == "r" and float(s.split("-", 1)[1]) < tolerance)]
+
+
+def is_it_worth_it(unitary: np.ndarray, noise_strength: float) -> bool:
+    n_qubits = int(math.log(unitary.shape[0], 2))
+    noise = standard_noise_channels(noise_strength, n_qubits)
+    circuit = ["A"]
+    key = {"A": unitary}
+    do_it = J_fidelity.f_pro_experimental(circuit, unitary, noise, key)
+    dont_do_it = J_fidelity.f_pro([unitary], np.eye(unitary.shape[0]))
+    if do_it > dont_do_it:
+        return True
+    return False
+
+
+def prune_circuit_v2(desc: Iterable, key: Dict[Any, np.ndarray], noise_strength: float) -> Iterable:
+    return [s for s in desc if is_it_worth_it(key[s], noise_strength)]
