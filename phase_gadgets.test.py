@@ -1,7 +1,13 @@
-import phase_gadgets
+from common_gates import get_Rz_key, cnot_key
 import math
 from J_fidelity import effect_of_noise
 from noise import standard_noise_channels
+from typing import Dict
+import numpy as np
+
+
+def get_key(angle: float) -> Dict[str, np.ndarray]:
+    return {**get_Rz_key(angle, 4), **cnot_key}
 
 
 circuit1 = ["cnot01", "cnot12", "cnot23", "Rz3", "cnot23", "cnot12", "cnot01"]  # Original phase gadget
@@ -11,7 +17,7 @@ circuit3 = ["cnot01-32", "cnot12", "Rz2", "cnot12", "cnot01-32"]  # Parallel CNO
 
 theta = math.pi / 4
 
-circuit_key = phase_gadgets.get_key(theta)
+circuit_key = get_key(theta)
 
 
 noise_strength = 0.001
