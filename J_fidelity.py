@@ -52,18 +52,16 @@ def f_pro_simulated(circuit_string: Iterable[Any], unitary: np.ndarray, p1: floa
     u_basis = get_diracs(n_qubits)
     one_qubit_state_basis = [I1, I1 + X, I1 + Y, I1 + Z]
     state_basis = one_qubit_state_basis
+    one_qubit_a = np.array([[1, 0, 0, 1], [-1, 2, 0, -1], [-1, 0, 2, -1], [-1, 0, 0, 1]])
+    a = one_qubit_a
     for _ in range(n_qubits - 1):
         state_basis = [np.kron(x, y) for x in state_basis for y in one_qubit_state_basis]
-    a = np.array(np.eye(dim ** 2) -
-                 np.outer([0] + [1 for _ in range(dim ** 2 - 1)], [1] + [0 for _ in range(dim ** 2 - 1)]))
+        a = np.kron(a, one_qubit_a)
     sigmas = get_diracs(n_qubits)
     b = np.array([[np.trace(unitary @ u_basis[j] @ unitary.transpose().conjugate() @ sigmas[l]) / dim for l in range(dim ** 2)] for j in range(dim ** 2)])
     m = a.transpose() @ b
 
-    def make_unknown(i, c):
-        c.H(i)
-        c.Measure(i)
-    one_qubit_preps = [make_unknown, (lambda i, c: c.H(i)), (lambda i, c: c.Rx(i, -0.5)), (lambda i, c: None)]
+    one_qubit_preps = [(lambda i, c: c.X(i)), (lambda i, c: c.H(i)), (lambda i, c: c.Rx(i, -0.5)), (lambda i, c: None)]
 
     def prepare_state(single_qubit_states):
         # single_qubit_state: a list of integers where {0: I, 1: I+X, 2: I+Y, 3: I+Z} for density of i'th qubit
