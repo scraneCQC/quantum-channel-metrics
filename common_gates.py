@@ -77,3 +77,6 @@ def Rx(angle: float, i: int, n_qubits: int) -> np.ndarray:
 def get_Rx_key(angle: float, n_qubits: int) -> Dict[str, np.ndarray]:
     return {"Rx" + str(i): Ry(angle, i, n_qubits) for i in range(4)}
 
+
+H = np.array([[1, 1], [1, -1]]) * 0.5 ** 0.5
+
