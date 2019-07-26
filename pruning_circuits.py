@@ -12,7 +12,10 @@ def generate_random_circuit(n_qubits: int, n_gates: int) -> Tuple[List[str], Dic
     desc = []
     key = {}
     for _ in range(n_gates):
-        gate_type = random.choice(["cnot", "rx", "ry", "rz"])
+        if n_qubits == 1:
+            gate_type = random.choice(["rx", "ry", "rz"])
+        else:
+            gate_type = random.choice(["cnot", "rx", "ry", "rz"])
         if gate_type == "cnot":
             direction = random.randint(0, 1)
             i = random.choice(list(range(n_qubits - 1)))
