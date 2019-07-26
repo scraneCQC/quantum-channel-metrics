@@ -4,6 +4,7 @@ from typing import Dict
 from J_fidelity import f_pro_experimental
 from common_gates import Rz
 import math
+import cmath
 from functools import reduce
 
 
@@ -38,16 +39,20 @@ def get_opt(desc, reps):
 
 
 def random_unitary():
-    a = complex(random.random(), random.random())
-    b = complex(random.random(), random.random())
-    m = (a * a.conjugate() + b * b.conjugate()) ** 0.5
-    return np.array([[a/m, b/m], [b.conjugate()/m, -a.conjugate()/m]])
+    phi1 = random.random() * math.pi * 2
+    phi2 = random.random() * math.pi * 2
+    theta = random.random() * math.pi * 2
+    c = math.cos(theta)
+    s = math.sin(theta)
+    e1 = cmath.exp(complex(0, phi1))
+    e2 = cmath.exp(complex(0, phi2))
+    return np.array([[e1 * c, e2 * s], [- s / e2, c / e1]])
 
 
-res = [run(10, random_unitary(), ops, max_iter=500) for _ in range(200)]
-print(res)
-print("average iterations taken", sum([r[2] for r in res]) / len(res))
-print("average fidelity", sum([r[1] for r in res]) / len(res))
-given_up = [r for r in res if r[2] == 500]
-if len(given_up) > 1:
-    print("average fidelity when giving up", sum([r[1] for r in given_up]) / len(given_up))
+#res = [run(10, random_unitary(), ops, max_iter=500) for _ in range(200)]
+#print(res)
+#print("average iterations taken", sum([r[2] for r in res]) / len(res))
+#print("average fidelity", sum([r[1] for r in res]) / len(res))
+#given_up = [r for r in res if r[2] == 500]
+#if len(given_up) > 1:
+#    print("average fidelity when giving up", sum([r[1] for r in given_up]) / len(given_up))
