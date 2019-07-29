@@ -2,7 +2,7 @@ import numpy as np
 import random
 from typing import Dict
 from J_fidelity import f_pro_experimental
-from common_gates import Rz
+from common_gates import Rz, random_unitary
 import math
 import cmath
 from functools import reduce
@@ -36,17 +36,6 @@ def get_opt(desc, reps):
     else:
         new = replacement + desc[1:]
     return new
-
-
-def random_unitary():
-    phi1 = random.random() * math.pi * 2
-    phi2 = random.random() * math.pi * 2
-    theta = random.random() * math.pi * 2
-    c = math.cos(theta)
-    s = math.sin(theta)
-    e1 = cmath.exp(complex(0, phi1))
-    e2 = cmath.exp(complex(0, phi2))
-    return np.array([[e1 * c, e2 * s], [- s / e2, c / e1]])
 
 
 #res = [run(10, random_unitary(), ops, max_iter=500) for _ in range(200)]

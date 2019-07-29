@@ -1,6 +1,7 @@
 import numpy as np
 import math
 import cmath
+import random
 from typing import Dict
 from scipy.linalg import block_diag
 
@@ -133,4 +134,44 @@ single_qubit_Clifford_T = {"S": np.array([[1, 0], [0, complex(0, 1)]]),
 two_qubit_clifford_T = {s + "0": np.kron(single_qubit_Clifford_T[s], np.eye(2)) for s in single_qubit_Clifford_T.keys()}
 two_qubit_clifford_T.update({s + "1": np.kron(np.eye(2), single_qubit_Clifford_T[s]) for s in single_qubit_Clifford_T})
 two_qubit_clifford_T.update({"C0": cnot12, "C1": cnot21})
+
+
+def clifford_T_gate_set(n_qubits: int):
+    key = {s + str(i): multi_qubit_matrix(single_qubit_Clifford_T[s], i, n_qubits) for i in range(n_qubits) for s in "STHX"}
+    key.update(get_cnot_key(n_qubits))
+    return key
+
+
+def random_unitary():
+    phi1 = random.random() * math.pi * 2
+    phi2 = random.random() * math.pi * 2
+    theta = random.random() * math.pi * 2
+    c = math.cos(theta)
+    s = math.sin(theta)
+    e1 = cmath.exp(complex(0, phi1))
+    e2 = cmath.exp(complex(0, phi2))
+    return np.array([[e1 * c, e2 * s], [- s / e2, c / e1]])
+
+
+def random_two_qubit_circuit():
+    key = {"A1": np.kron(random_unitary(), np.eye(2)),
+           "A2": np.kron(np.eye(2), random_unitary()),
+           "A3": np.kron(random_unitary(), np.eye(2)),
+           "A4": np.kron(np.eye(2), random_unitary()),
+           "C0": cnot12,
+           "C1": cnot21,
+           "Rzt1": Rz(random.random() * 2 * math.pi, 0, 2),
+           "Ryt2": Ry(random.random() * 2 * math.pi, 1, 2),
+           "Ryt3": Ry(random.random() * 2 * math.pi, 1, 2)}
+    return ["A1", "A2", "C1", "Rzt1", "Ryt2", "C0", "Ryt3", "C1", "A3", "A4"], key
+
+
+def discrete_angle_key(angle_precision: int, n_qubits: int):
+    x_key = {"Rx" + str(i) + ":" + str(k): Rx(k * math.pi * 2 ** (1 - angle_precision), i, n_qubits)
+             for i in range(n_qubits) for k in range(1, 2 ** angle_precision)}
+    y_key = {"Ry" + str(i) + ":" + str(k): Ry(k * math.pi * 2 ** (1 - angle_precision), i, n_qubits)
+             for i in range(n_qubits) for k in range(1, 2 ** angle_precision)}
+    z_key = {"Rz" + str(i) + ":" + str(k): Rz(k * math.pi * 2 ** (1 - angle_precision), i, n_qubits)
+             for i in range(n_qubits) for k in range(1, 2 ** angle_precision)}
+    return {**x_key, **y_key, **z_key}
 
