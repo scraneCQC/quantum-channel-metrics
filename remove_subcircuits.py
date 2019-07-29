@@ -24,6 +24,8 @@ class SubcircuitRemover:
         self.U = reduce(lambda x, y: x @ y, [self.key[s] for s in self.circuit], np.eye(2 ** self.n_qubits))
         self.sigmas = [sum([self.a[k][l] * self.U @ self.u_basis[k] @ self.U.transpose().conjugate()
                        for k in range(self.d2)]) for l in range(self.d2)]
+        #self.runner = CachingRunner(circuit_key, n_qubits, noise_channels)
+        #self.runner.cache.update({"".join(self.circuit): self.runner.circuit_process_matrix(self.circuit)})
 
     def _get_unitary(self, desc):
         return reduce(lambda x, y: x @ y, [self.key[s] for s in desc], np.eye(2 ** self.n_qubits))
@@ -50,18 +52,16 @@ class SubcircuitRemover:
     def remove_any_subcircuit(self):
         length = len(self.circuit)
         original_fid = self.f_pro_experimental(self.circuit)
-        return any(
-            any(self.should_remove_subcircuit(s,s+i, original_fid) for s in range(length - i + 1))
-            for i in range(1, min(6, length + 1)))
+        return any(self.should_remove_subcircuit(s,s+i, original_fid)
+                   for i in range(1, min(6, length + 1)) for s in range(length - i + 1))
 
     def replace_any_subcircuit(self):
         length = len(self.circuit)
         if length == 1:
             return False
         original_fid = self.f_pro_experimental(self.circuit)
-        return any(
-            any(self.should_replace_subcircuit(s, s+i, original_fid) for s in range(length - i + 1))
-            for i in range(min(5, length), 1, -1))
+        return any(self.should_replace_subcircuit(s, s+i, original_fid)
+                   for i in range(min(5, length), 0, -1) for s in range(length - i + 1))
 
     def reduce_circuit(self):
         while self.remove_any_subcircuit() or self.replace_any_subcircuit():
@@ -71,7 +71,7 @@ class SubcircuitRemover:
     def f_pro_experimental(self, circuit_string: Iterable[Any]) -> float:
         expectations = (
             np.trace(self.sigmas[k] @ run_by_matrices(circuit_string, self.state_basis[k], self.noise_channels, self.key))
-            .real for k in range(self.d2))
+                .real for k in range(self.d2))
         return 2 ** (-3 * self.n_qubits) * sum(expectations)
 
     def fid_with_id(self, unitary):
@@ -82,4 +82,3 @@ class SubcircuitRemover:
     @property
     def unitary(self):
         return reduce(lambda x, y: x @ y, (self.key[s] for s in self.circuit), np.eye(2 ** self.n_qubits))
-
