@@ -30,11 +30,16 @@ class SubcircuitRemover:
     def _get_unitary(self, desc):
         return reduce(lambda x, y: x @ y, [self.key[s] for s in desc], np.eye(2 ** self.n_qubits))
 
+    def set_target_unitary(self, unitary):
+        self.U = unitary
+        self.sigmas = [sum([self.a[k][l] * self.U @ self.u_basis[k] @ self.U.transpose().conjugate()
+                            for k in range(self.d2)]) for l in range(self.d2)]
+
     def should_remove_subcircuit(self, start, end, original_fid):
         remove_fid = self.f_pro_experimental(self.circuit[:start] + self.circuit[end:])
         if remove_fid >= original_fid:
             if self.verbose:
-                print("removing", self.circuit[start:end])
+                print("removing", self.circuit[start:end], "for a gain of", remove_fid - original_fid)
             self.circuit = self.circuit[:start] + self.circuit[end:]
             return True
         return False
@@ -44,7 +49,7 @@ class SubcircuitRemover:
         g, f = max(replace_fid, key=lambda x: x[1])
         if f > original_fid:
             if self.verbose:
-                print("replacing", self.circuit[start:end], "with", [g])
+                print("replacing", self.circuit[start:end], "with", [g], "for a gain of", f - original_fid)
             self.circuit = self.circuit[:start] + [g] + self.circuit[end:]
             return True
         return False
