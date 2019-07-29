@@ -1,5 +1,4 @@
 from noise import *
-import math
 from typing import Iterable, Any, Dict, Callable
 
 
@@ -21,7 +20,7 @@ def run_by_matrices(string: Any, start_density: np.ndarray, noise_channels: Iter
         key = ops
     rho = start_density
     for s in string[::-1]:
-        rho = apply_channel([key[s]], rho)
+        rho = key[s] @ rho @ key[s].transpose().conjugate()
         for c in noise_channels:
-            rho = apply_channel(c, rho)
+            rho = sum(e @ rho @ e.transpose().conjugate() for e in c)
     return rho

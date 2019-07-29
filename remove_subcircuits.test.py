@@ -7,22 +7,21 @@ from common_gates import clifford_T_gate_set, random_two_qubit_circuit, discrete
 import qft
 from J_fidelity import f_pro_experimental, f_pro
 
+random.seed(33)
 
-random.seed(999)
-
-n_qubits = 2
-noise = [depolarising_channel(0.05, n_qubits)]
+n_qubits = 3
+noise = [depolarising_channel(0.01, n_qubits)]
 
 # circuit1, key = generate_random_circuit(n_qubits, 10)
 # circuit1 = random.choices("SXHT", k=10)
 # key = ops
 # key = clifford_T_gate_set(n_qubits)
-precision = 4
+precision = 3
 key = discrete_angle_key(precision, n_qubits)
 key.update(get_cnot_key(n_qubits))
 l = len(key)
 weights = [1 for _ in range(3 * n_qubits * (2 ** precision - 1))] + [2 ** precision for _ in range(2 * (n_qubits - 1))]
-circuit1 = random.choices(list(key.keys()), k=20, weights=weights)
+circuit1 = random.choices(list(key.keys()), k=10, weights=weights)
 # circuit1, key = qft.generate_circuit(n_qubits)
 # circuit1, key = random_two_qubit_circuit()
 
