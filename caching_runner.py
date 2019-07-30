@@ -7,7 +7,6 @@ from typing import Dict, Iterable
 class CachingRunner:
 
     def __init__(self, key: Dict, n_qubits: int, noise_channels: Iterable):
-        self.key = key
         self.n_qubits = n_qubits
         self.diracs = get_diracs(n_qubits)
         self.cache = {k: reduce(lambda x, y: x @ y, (self.process_matrix(channel) for channel in noise_channels), self.process_matrix([v]))
@@ -23,9 +22,9 @@ class CachingRunner:
         l = len(circuit)
         for i in range(len(circuit)):
             if "".join(circuit[i:]) in self.cache:
-                return self.cache["".join(circuit[i:])] @ reduce(lambda x, y: x @ y, [self.cache[s] for s in circuit[:i]], self.I)
+                return reduce(lambda x, y: x @ y, [self.cache[s] for s in circuit[:i]], self.I) @ self.cache["".join(circuit[i:])]
             if "".join(circuit[:(l - i)]) in self.cache:
-                return reduce(lambda x, y: x @ y, [self.cache[s] for s in circuit[(l - i):]], self.I) @ self.cache["".join(circuit[:(l - i)])]
+                return self.cache["".join(circuit[:(l - i)])] @ reduce(lambda x, y: x @ y, [self.cache[s] for s in circuit[(l - i):]], self.I)
 
     def decompose(self, density):
         return [np.trace(density @ d) / (2 ** self.n_qubits) for d in self.diracs]
