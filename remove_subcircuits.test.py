@@ -7,7 +7,6 @@ from common_gates import clifford_T_gate_set, random_two_qubit_circuit, discrete
 import qft
 from J_fidelity import f_pro_experimental, f_pro
 
-random.seed(23)
 
 def run():
     n_qubits = 2
@@ -44,14 +43,25 @@ def run():
     print("The fidelity between the ideal circuits is", f_pro([u2], u1))
 
 
+def run_multiple():
+    n_qubits = 2
+    noise = [depolarising_channel(0.1, n_qubits)]
+    precision = 6
+    key = discrete_angle_key(precision, n_qubits)
+    key.update(get_cnot_key(n_qubits))
+    weights = [1 for _ in range(3 * n_qubits * (2 ** precision - 1))] + [2 ** precision for _ in
+                                                                         range(2 * (n_qubits - 1))]
+    circuits = [random.choices(list(key.keys()), k=20, weights=weights) for _ in range(10)]
+    run_all(circuits, key, noise, n_qubits, True)
+
+
 def synthesise():
     n_qubits = 1
     precision = 6
     key = discrete_angle_key(precision, n_qubits)
-    noise = [depolarising_channel(1e-5, n_qubits)]
+    noise = [depolarising_channel(1e-4, n_qubits)]
     circuit1 = random.choices(list(key.keys()), k=10)
-
-    remover = SubcircuitRemover(circuit1, key, noise, n_qubits=n_qubits)
+    remover = SubcircuitRemover(circuit1, key, noise, n_qubits=n_qubits, verbose=True)
     u = random_unitary()
     remover.set_target_unitary(u)
     print("The random circuit and random unitary have this fidelity", f_pro_experimental(circuit1, u, [], key))
@@ -62,4 +72,4 @@ def synthesise():
 
 
 # print(synthesise())
-run()
+run_multiple()

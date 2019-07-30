@@ -26,10 +26,9 @@ class CachingRunner:
         for i in range(len(circuit)):
             if "".join(circuit[i:]) in self.cache:
                 return self.get_matrix(circuit[:i]) @ self.cache["".join(circuit[i:])]
-                return reduce(lambda x, y: x @ y, [self.cache[s] for s in circuit[:i]], self.I) @ self.cache["".join(circuit[i:])]
             if "".join(circuit[:(l - i)]) in self.cache:
                 return self.cache["".join(circuit[:(l - i)])] @ self.get_matrix(circuit[(l - i):])
-                return self.cache["".join(circuit[:(l - i)])] @ reduce(lambda x, y: x @ y, [self.cache[s] for s in circuit[(l - i):]], self.I)
+        return reduce(lambda x, y: x @ y, [self.cache[s] for s in circuit], self.I)
 
     def decompose(self, density):
         return [np.trace(density @ d) / (2 ** self.n_qubits) for d in self.diracs]

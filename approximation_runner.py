@@ -103,8 +103,5 @@ def get_pauli_expectation_v2(circuit_string: Iterable[Any], initial_circuit: Cir
         circuit.add_circuit(final_circuits[pauli_string[i]].copy(), [i])
     circuit.measure_all()
     noisy_backend = make_noisy_backend(p1, gamma1, gamma2)
-    start = time.time()
     noisy_shots = noisy_backend.get_counts(circuit, shots)
-    end = time.time()
-    print(end-start)
     return sum(v * (-1) ** sum(k) for k, v in noisy_shots.items())/shots
