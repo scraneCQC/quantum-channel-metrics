@@ -6,6 +6,7 @@ from pruning_circuits import generate_random_circuit
 from common_gates import clifford_T_gate_set, random_two_qubit_circuit, discrete_angle_key, get_cnot_key, random_unitary
 import qft
 from J_fidelity import f_pro_experimental, f_pro
+import math
 
 
 def run():
@@ -45,8 +46,8 @@ def run():
 
 def run_multiple():
     n_qubits = 2
-    noise = [depolarising_channel(0.1, n_qubits)]
-    precision = 6
+    noise = [depolarising_channel(0.02, n_qubits)]
+    precision = 4
     key = discrete_angle_key(precision, n_qubits)
     key.update(get_cnot_key(n_qubits))
     weights = [1 for _ in range(3 * n_qubits * (2 ** precision - 1))] + [2 ** precision for _ in
@@ -55,14 +56,14 @@ def run_multiple():
     run_all(circuits, key, noise, n_qubits, True)
 
 
-def synthesise():
-    n_qubits = 1
+def synthesise(u: np.ndarray):
+    n_qubits = int(math.log(u.shape[0], 2))
     precision = 6
     key = discrete_angle_key(precision, n_qubits)
-    noise = [depolarising_channel(1e-4, n_qubits)]
-    circuit1 = random.choices(list(key.keys()), k=10)
+    key.update(get_cnot_key(n_qubits))
+    noise = [depolarising_channel(0.01, n_qubits)]
+    circuit1 = ["Rz1:1", "Rx0:1", "Rz1:1", "cnot01", "Ry0:1", "Rz1:1", "cnot10", "Ry0:1", "cnot01", "Rx0:1", "Rz1:1", "Rz1:1"]
     remover = SubcircuitRemover(circuit1, key, noise, n_qubits=n_qubits, verbose=True)
-    u = random_unitary()
     remover.set_target_unitary(u)
     print("The random circuit and random unitary have this fidelity", f_pro_experimental(circuit1, u, [], key))
     while remover.replace_any_subcircuit():
@@ -71,5 +72,18 @@ def synthesise():
     return remover.circuit
 
 
-# print(synthesise())
-run_multiple()
+def synth_n_qubits():
+    n_qubits = 2
+    precision = 4
+    key = discrete_angle_key(precision, n_qubits)
+    key.update(get_cnot_key(n_qubits))
+    weights = [1 for _ in range(3 * n_qubits * (2 ** precision - 1))] + [2 ** precision for _ in
+                                                                         range(2 * (n_qubits - 1))]
+    u = reduce(lambda x, y: x @ y, random.choices(list(key.values()), k=10, weights=weights), np.eye(2 ** n_qubits))
+    print("synthesising\n", u)
+    return synthesise(u)
+
+
+print(synth_n_qubits())
+
+

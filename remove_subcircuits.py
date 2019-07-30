@@ -24,7 +24,7 @@ class SubcircuitRemover:
         self.sigmas = np.array([self.U @ u @ self.U.transpose().conjugate() for u in self.u_basis])
         self.runner = CachingRunner(circuit_key, n_qubits, noise_channels)
         self.runner.remember(self.circuit)
-        [self.runner.remember([x, y]) for x in circuit_key.keys() for y in circuit_key.keys()]
+        #[self.runner.remember([x, y]) for x in circuit_key.keys() for y in circuit_key.keys()]
         if verbose:
             print("Ready to optimize your noisy circuits")
 
@@ -85,7 +85,7 @@ class SubcircuitRemover:
             return False
         original_fid = self.fidelity(self.circuit)
         return any(self.should_replace_with_2(s, s + i, original_fid)
-                   for i in range(3, min(6, length + 1)) for s in range(length - i + 1))
+                   for i in range(3, min(4, length + 1)) for s in range(length - i + 1))# if self.circuit[s][0] == "c")
 
     def reorder(self) -> bool:
         l = len(self.circuit)
@@ -104,7 +104,7 @@ class SubcircuitRemover:
         return False
 
     def reduce_circuit(self) -> Iterable:
-        while self.remove_any_subcircuit() or self.reorder() or self.replace_any_subcircuit(): # or self.replace_any_with2():
+        while self.remove_any_subcircuit() or self.reorder() or self.replace_any_subcircuit() or self.replace_any_with2():
             pass
         return self.circuit
 
