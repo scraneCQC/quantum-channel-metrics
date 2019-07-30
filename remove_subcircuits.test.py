@@ -7,10 +7,11 @@ from common_gates import clifford_T_gate_set, random_two_qubit_circuit, discrete
 import qft
 from J_fidelity import f_pro_experimental, f_pro
 
+random.seed(23)
 
 def run():
     n_qubits = 2
-    noise = [depolarising_channel(0.02, n_qubits)]
+    noise = [depolarising_channel(0.01, n_qubits)]
 
     # circuit1, key = generate_random_circuit(n_qubits, 10)
     # circuit1 = random.choices("SXHT", k=10)

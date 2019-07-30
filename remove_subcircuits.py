@@ -2,6 +2,7 @@ from functools import reduce
 from density_runner import run_by_matrices
 from typing import Iterable, Dict, Any
 from Pauli import *
+from caching_runner import CachingRunner
 
 
 class SubcircuitRemover:
@@ -24,8 +25,9 @@ class SubcircuitRemover:
         self.U = reduce(lambda x, y: x @ y, [self.key[s] for s in self.circuit], np.eye(2 ** self.n_qubits))
         self.sigmas = [sum([self.a[k][l] * self.U @ self.u_basis[k] @ self.U.transpose().conjugate()
                        for k in range(self.d2)]) for l in range(self.d2)]
-        #self.runner = CachingRunner(circuit_key, n_qubits, noise_channels)
-        #self.runner.cache.update({"".join(self.circuit): self.runner.circuit_process_matrix(self.circuit)})
+        self.runner = CachingRunner(circuit_key, n_qubits, noise_channels)
+        self.runner.remember(self.circuit)
+        [self.runner.remember([x, y]) for x in circuit_key.keys() for y in circuit_key.keys()]
 
     def _get_unitary(self, desc):
         return reduce(lambda x, y: x @ y, [self.key[s] for s in desc], np.eye(2 ** self.n_qubits))
@@ -75,7 +77,7 @@ class SubcircuitRemover:
 
     def f_pro_experimental(self, circuit_string: Iterable[Any]) -> float:
         expectations = (
-            np.trace(self.sigmas[k] @ run_by_matrices(circuit_string, self.state_basis[k], self.noise_channels, self.key))
+            np.trace(self.sigmas[k] @ self.runner.run(circuit_string, self.state_basis[k]))
                 .real for k in range(self.d2))
         return 2 ** (-3 * self.n_qubits) * sum(expectations)
 
