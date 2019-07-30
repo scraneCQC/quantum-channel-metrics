@@ -15,19 +15,22 @@ class SubcircuitRemover:
         self.n_qubits = n_qubits
         self.verbose = verbose
         self.u_basis = get_diracs(self.n_qubits)
-        one_qubit_state_basis = [I1, I1 + X, I1 + Y, I1 + Z]
-        self.state_basis = one_qubit_state_basis
-        for _ in range(self.n_qubits - 1):
-            self.state_basis = [np.kron(x, y) for x in self.state_basis for y in one_qubit_state_basis]
+        self.state_basis = self.u_basis
+        # one_qubit_state_basis = [I1, I1 + X, I1 + Y, I1 + Z]
+        # self.state_basis = one_qubit_state_basis
+        # for _ in range(self.n_qubits - 1):
+        #     self.state_basis = [np.kron(x, y) for x in self.state_basis for y in one_qubit_state_basis]
         self.d2 = 2 ** (2 * self.n_qubits)
-        self.a = np.array(np.eye(self.d2) -
-                          np.outer([0] + [1 for _ in range(self.d2 - 1)], [1] + [0 for _ in range(self.d2 - 1)]))
+        # self.a = np.array(np.eye(self.d2) -
+        #                   np.outer([0] + [1 for _ in range(self.d2 - 1)], [1] + [0 for _ in range(self.d2 - 1)]))
         self.U = reduce(lambda x, y: x @ y, [self.key[s] for s in self.circuit], np.eye(2 ** self.n_qubits))
-        self.sigmas = [sum([self.a[k][l] * self.U @ self.u_basis[k] @ self.U.transpose().conjugate()
-                       for k in range(self.d2)]) for l in range(self.d2)]
+        # self.sigmas = [sum([self.a[k][l] * self.U @ self.u_basis[k] @ self.U.transpose().conjugate()
+        #                for k in range(self.d2)]) for l in range(self.d2)]
+        self.sigmas = [self.U @ u @ self.U.transpose().conjugate() for u in self.u_basis]
         self.runner = CachingRunner(circuit_key, n_qubits, noise_channels)
         self.runner.remember(self.circuit)
         [self.runner.remember([x, y]) for x in circuit_key.keys() for y in circuit_key.keys()]
+        self.blank = np.zeros((self.d2, 1))
 
     def _get_unitary(self, desc):
         return reduce(lambda x, y: x @ y, [self.key[s] for s in desc], np.eye(2 ** self.n_qubits))
@@ -77,7 +80,7 @@ class SubcircuitRemover:
 
     def f_pro_experimental(self, circuit_string: Iterable[Any]) -> float:
         expectations = (
-            np.trace(self.sigmas[k] @ self.runner.run(circuit_string, self.state_basis[k]))
+            np.trace(self.sigmas[k] @ self.runner.run_on_basis(circuit_string, k))
                 .real for k in range(self.d2))
         return 2 ** (-3 * self.n_qubits) * sum(expectations)
 

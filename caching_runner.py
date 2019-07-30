@@ -12,6 +12,7 @@ class CachingRunner:
         self.cache = {k: reduce(lambda x, y: x @ y, (self.process_matrix(channel) for channel in noise_channels), self.process_matrix([v]))
                       for k, v in key.items()}
         self.I = np.eye(2 ** (2 * n_qubits))
+        self.d2 = 2 ** (2 * n_qubits)
 
     def remember(self, circuit):
         if "".join(circuit) in self.cache:
@@ -19,11 +20,15 @@ class CachingRunner:
         self.cache.update({"".join(circuit): self.get_matrix(circuit)})
 
     def get_matrix(self, circuit):
+        if "".join(circuit) in self.cache:
+            return self.cache["".join(circuit)]
         l = len(circuit)
         for i in range(len(circuit)):
             if "".join(circuit[i:]) in self.cache:
+                return self.get_matrix(circuit[:i]) @ self.cache["".join(circuit[i:])]
                 return reduce(lambda x, y: x @ y, [self.cache[s] for s in circuit[:i]], self.I) @ self.cache["".join(circuit[i:])]
             if "".join(circuit[:(l - i)]) in self.cache:
+                return self.cache["".join(circuit[:(l - i)])] @ self.get_matrix(circuit[(l - i):])
                 return self.cache["".join(circuit[:(l - i)])] @ reduce(lambda x, y: x @ y, [self.cache[s] for s in circuit[(l - i):]], self.I)
 
     def decompose(self, density):
@@ -37,10 +42,19 @@ class CachingRunner:
         return reduce(lambda x, y: x @ y, (self.cache[g] for g in circuit), self.I)
 
     def to_density(self, coefficients):
-        return sum(r * d for r, d in zip(coefficients, self.diracs))
+        return sum([r * d for r, d in zip(coefficients, self.diracs)])
 
     def run(self, circuit, density):
         start = np.array([[r] for r in self.decompose(density)])
+        if "".join(circuit) in self.cache:
+            return self.to_density(self.cache["".join(circuit)] @ start)
+        mat = self.get_matrix(circuit)
+        self.cache.update({"".join(circuit): mat})
+        return self.to_density(mat @ start)
+
+    def run_on_basis(self, circuit, k):
+        start = np.zeros((self.d2))
+        start[k] = 1
         if "".join(circuit) in self.cache:
             return self.to_density(self.cache["".join(circuit)] @ start)
         mat = self.get_matrix(circuit)
