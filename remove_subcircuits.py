@@ -130,7 +130,7 @@ def run_all(circuits: Iterable, circuit_key: Dict, noise_channels: Iterable, n_q
             u1 = sr.U
         res.append(sr.reduce_circuit())
         if verbose:
-            u2 = sr.U
+            u2 = sr.unitary
             print("Result:\n", res[-1])
             print("New fidelity:", sr.fidelity(sr.circuit))
             print("Fidelity of ideal circuits", f_pro([u1], u2))
