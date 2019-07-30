@@ -1,13 +1,13 @@
 from functools import reduce
-from density_runner import run_by_matrices
-from typing import Iterable, Dict, Any
+from typing import Iterable, Dict
 from Pauli import *
 from caching_runner import CachingRunner
 
 
 class SubcircuitRemover:
 
-    def __init__(self, circuit_description, circuit_key, noise_channels, n_qubits=1, verbose=False):
+    def __init__(self, circuit_description: Iterable, circuit_key: Dict, noise_channels: Iterable, n_qubits: int = 1,
+                 verbose: bool = False):
         self.circuit = circuit_description
         self.key = circuit_key
         self.gates = list(self.key.keys())
@@ -16,32 +16,19 @@ class SubcircuitRemover:
         self.verbose = verbose
         self.u_basis = get_diracs(self.n_qubits)
         self.state_basis = self.u_basis
-        # one_qubit_state_basis = [I1, I1 + X, I1 + Y, I1 + Z]
-        # self.state_basis = one_qubit_state_basis
-        # for _ in range(self.n_qubits - 1):
-        #     self.state_basis = [np.kron(x, y) for x in self.state_basis for y in one_qubit_state_basis]
         self.d2 = 2 ** (2 * self.n_qubits)
-        # self.a = np.array(np.eye(self.d2) -
-        #                   np.outer([0] + [1 for _ in range(self.d2 - 1)], [1] + [0 for _ in range(self.d2 - 1)]))
         self.U = reduce(lambda x, y: x @ y, [self.key[s] for s in self.circuit], np.eye(2 ** self.n_qubits))
-        # self.sigmas = [sum([self.a[k][l] * self.U @ self.u_basis[k] @ self.U.transpose().conjugate()
-        #                for k in range(self.d2)]) for l in range(self.d2)]
         self.sigmas = [self.U @ u @ self.U.transpose().conjugate() for u in self.u_basis]
         self.runner = CachingRunner(circuit_key, n_qubits, noise_channels)
         self.runner.remember(self.circuit)
         [self.runner.remember([x, y]) for x in circuit_key.keys() for y in circuit_key.keys()]
-        self.blank = np.zeros((self.d2, 1))
-
-    def _get_unitary(self, desc):
-        return reduce(lambda x, y: x @ y, [self.key[s] for s in desc], np.eye(2 ** self.n_qubits))
 
     def set_target_unitary(self, unitary):
         self.U = unitary
-        self.sigmas = [sum([self.a[k][l] * self.U @ self.u_basis[k] @ self.U.transpose().conjugate()
-                            for k in range(self.d2)]) for l in range(self.d2)]
+        self.sigmas = [self.U @ u @ self.U.transpose().conjugate() for u in self.u_basis]
 
-    def should_remove_subcircuit(self, start, end, original_fid):
-        remove_fid = self.f_pro_experimental(self.circuit[:start] + self.circuit[end:])
+    def should_remove_subcircuit(self, start: int, end: int, original_fid: float) -> bool:
+        remove_fid = self.fidelity(self.circuit[:start] + self.circuit[end:])
         if remove_fid >= original_fid:
             if self.verbose:
                 print("removing", self.circuit[start:end], "for a gain of", remove_fid - original_fid)
@@ -49,8 +36,8 @@ class SubcircuitRemover:
             return True
         return False
 
-    def should_replace_subcircuit(self, start, end, original_fid):
-        replace_fid = [(g, self.f_pro_experimental(self.circuit[:start] + [g] + self.circuit[end:])) for g in self.gates]
+    def should_replace_subcircuit(self, start: int, end: int, original_fid: float) -> bool:
+        replace_fid = [(g, self.fidelity(self.circuit[:start] + [g] + self.circuit[end:])) for g in self.gates]
         g, f = max(replace_fid, key=lambda x: x[1])
         if f > original_fid:
             if self.verbose:
@@ -59,36 +46,29 @@ class SubcircuitRemover:
             return True
         return False
 
-    def remove_any_subcircuit(self):
+    def remove_any_subcircuit(self) -> bool:
         length = len(self.circuit)
-        original_fid = self.f_pro_experimental(self.circuit)
-        return any(self.should_remove_subcircuit(s,s+i, original_fid)
+        original_fid = self.fidelity(self.circuit)
+        return any(self.should_remove_subcircuit(s, s + i, original_fid)
                    for i in range(1, min(6, length + 1)) for s in range(length - i + 1))
 
-    def replace_any_subcircuit(self):
+    def replace_any_subcircuit(self) -> bool:
         length = len(self.circuit)
         if length == 1:
             return False
-        original_fid = self.f_pro_experimental(self.circuit)
-        return any(self.should_replace_subcircuit(s, s+i, original_fid)
+        original_fid = self.fidelity(self.circuit)
+        return any(self.should_replace_subcircuit(s, s + i, original_fid)
                    for i in range(min(5, length), 0, -1) for s in range(length - i + 1))
 
-    def reduce_circuit(self):
+    def reduce_circuit(self) -> Iterable:
         while self.remove_any_subcircuit() or self.replace_any_subcircuit():
             pass
         return self.circuit
 
-    def f_pro_experimental(self, circuit_string: Iterable[Any]) -> float:
-        expectations = (
-            np.trace(self.sigmas[k] @ self.runner.run_on_basis(circuit_string, k))
-                .real for k in range(self.d2))
-        return 2 ** (-3 * self.n_qubits) * sum(expectations)
-
-    def fid_with_id(self, unitary):
-        sigmas = (sum(self.a[k][l] * unitary @ self.u_basis[k] @ unitary.transpose().conjugate()
-                      for k in range(self.d2)) for l in range(self.d2))
-        return 2 ** (-3 * self.n_qubits) * sum(np.trace(sigmas[k] @ self.state_basis[k]) for k in range(self.d2)).real
+    def fidelity(self, circuit_string: Iterable) -> float:
+        s = np.einsum('kij,lk,lji->', np.array(self.sigmas), self.runner.get_matrix(circuit_string), np.array(self.state_basis))
+        return 2 ** (-3 * self.n_qubits) * s
 
     @property
-    def unitary(self):
+    def unitary(self) -> np.ndarray:
         return reduce(lambda x, y: x @ y, (self.key[s] for s in self.circuit), np.eye(2 ** self.n_qubits))
