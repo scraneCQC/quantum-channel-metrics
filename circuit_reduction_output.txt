@@ -1,0 +1,149 @@
+/home/simon/PycharmProjects/CQC/metrics/venv/bin/python /home/simon/PycharmProjects/CQC/metrics/remove_subcircuits.test.py
+Setting up subcircuit remover...
+Ready to optimize your noisy circuits
+Running on circuit:
+ ['Ry1:15', 'Rz1:12', 'Rz0:8', 'Ry1:3', 'Ry0:7', 'Rz0:7', 'Ry0:5', 'Ry0:3', 'cnot10', 'cnot01', 'Rx1:12', 'Ry1:12', 'Rx0:11', 'Rx1:13', 'Rx0:5', 'cnot01', 'cnot01', 'Rx1:10', 'Ry1:3', 'cnot01']
+Original fidelity: 0.6689717699987839
+circuit was trivially equivalent to ['Rz0:8', 'Ry0:7', 'Rz0:7', 'Ry0:8', 'Ry1:15', 'Rz1:12', 'Ry1:3', 'cnot10', 'Rx1:12', 'cnot01', 'Ry1:12', 'Rx1:7', 'Ry1:3', 'cnot01']
+fidelity of new circuit: 0.7547192942104867
+removing ['Rz0:8', 'Ry0:7', 'Rz0:7', 'Ry0:8'] for a gain of 0.0021147222850159686
+replacing ['Ry1:12'] with ['Ry1:11'] for a gain of 0.02994449561509338
+replacing ['Ry1:11', 'Rx1:7', 'Ry1:3'] with ['Rz1:7'] for a gain of 0.027534404386857725
+replacing ['Ry1:15', 'Rz1:12', 'Ry1:3'] with ['Rx1:3', 'Rz1:13'] for a gain of 0.011726824572475647
+Result:
+ ['Rx1:3', 'Rz1:13', 'cnot10', 'Rx1:12', 'cnot01', 'Rz1:7', 'cnot01']
+New fidelity: 0.8260397410699294
+Fidelity of ideal circuits 0.9526036944601451
+
+
+Running on circuit:
+ ['cnot01', 'Ry1:7', 'Rz1:14', 'cnot10', 'cnot10', 'cnot01', 'Rz0:9', 'Rz0:11', 'Rz0:8', 'cnot01', 'cnot01', 'Rx0:14', 'Rz0:10', 'Ry1:10', 'Ry1:13', 'Rx1:11', 'cnot10', 'Rz0:8', 'Rz0:12', 'cnot01']
+Original fidelity: 0.6689717694441241
+circuit was trivially equivalent to ['Rz0:12', 'cnot01', 'Ry1:7', 'Rz1:14', 'cnot01', 'Rx0:14', 'Rz0:10', 'Ry1:7', 'Rx1:11', 'cnot10', 'Rz0:4', 'cnot01']
+fidelity of new circuit: 0.7856781454717168
+Result:
+ ['Rz0:12', 'cnot01', 'Ry1:7', 'Rz1:14', 'cnot01', 'Rx0:14', 'Rz0:10', 'Ry1:7', 'Rx1:11', 'cnot10', 'Rz0:4', 'cnot01']
+New fidelity: 0.7856781454717168
+Fidelity of ideal circuits 1.0
+
+
+Running on circuit:
+ ['Rx0:3', 'Rx0:9', 'Rz0:12', 'Rz0:3', 'Rx0:6', 'cnot01', 'cnot10', 'cnot01', 'cnot10', 'cnot10', 'cnot10', 'Rz1:10', 'Rz1:8', 'Rx1:2', 'cnot10', 'Rz0:7', 'Rx0:8', 'cnot01', 'Rz0:6', 'Rz0:2']
+Original fidelity: 0.6689717705884082
+circuit was trivially equivalent to ['Rx0:12', 'Rz0:15', 'Rx0:6', 'cnot01', 'cnot10', 'cnot01', 'Rz1:2', 'cnot10', 'Rx1:2', 'cnot10', 'Rz0:7', 'Rx0:8', 'Rz0:8', 'cnot01']
+fidelity of new circuit: 0.7547192951688229
+replacing ['Rx0:8', 'Rz0:8'] with ['Ry0:8'] for a gain of 0.015323857032408794
+replacing ['Rx0:12', 'Rz0:15', 'Rx0:6'] with ['Rx0:2'] for a gain of 0.0010776886099389538
+replacing ['Rz1:2'] with ['Rz1:3'] for a gain of 0.012737196534463924
+Result:
+ ['Rx0:2', 'cnot01', 'cnot10', 'cnot01', 'Rz1:3', 'cnot10', 'Rx1:2', 'cnot10', 'Rz0:7', 'Ry0:8', 'cnot01']
+New fidelity: 0.7838580373456345
+Fidelity of ideal circuits 0.9778290998969354
+
+
+Running on circuit:
+ ['Rz1:4', 'cnot10', 'Ry1:4', 'Ry0:10', 'Rz0:13', 'Ry0:12', 'Rx1:7', 'Rz0:13', 'Ry0:13', 'cnot10', 'Rx1:5', 'Ry1:14', 'Ry0:6', 'Rx0:6', 'Ry0:7', 'cnot01', 'cnot01', 'Rx1:2', 'Rx0:2', 'cnot10']
+Original fidelity: 0.6689717703204606
+circuit was trivially equivalent to ['Rz1:4', 'cnot10', 'Ry0:10', 'Rz0:13', 'Ry0:12', 'Rz0:13', 'Ry0:13', 'Ry1:4', 'Rx1:7', 'cnot10', 'Ry0:6', 'Rx0:6', 'Ry0:7', 'Rx0:2', 'Rx1:5', 'Ry1:14', 'Rx1:2', 'cnot10']
+fidelity of new circuit: 0.6964132282542856
+replacing ['Ry0:10', 'Rz0:13', 'Ry0:12'] with ['Ry0:6', 'Rx0:13'] for a gain of 0.014140008574581753
+replacing ['Ry0:6', 'Rx0:6', 'Ry0:7'] with ['Rx0:10', 'Rz0:15'] for a gain of 0.0032624160418706083
+replacing ['Ry0:6', 'Rx0:13', 'Rz0:13'] with ['Rx0:11', 'Rz0:3'] for a gain of 0.0024822000475379635
+replacing ['Rz0:3', 'Ry0:13', 'Rx0:10'] with ['Ry0:13', 'Rx0:13'] for a gain of 0.014375591913605268
+replacing ['Rx0:11'] with ['Rx0:10'] for a gain of 0.008128084310248584
+replacing ['Rx1:5', 'Ry1:14', 'Rx1:2'] with ['Ry1:9', 'Rz1:10'] for a gain of 0.003392155558624488
+Result:
+ ['Rx0:10', 'Rz1:4', 'cnot10', 'Ry0:13', 'Rx0:13', 'Ry1:4', 'Rx1:7', 'cnot10', 'Rz0:15', 'Rx0:2', 'Ry1:9', 'Rz1:10', 'cnot10']
+New fidelity: 0.742193565775467
+Fidelity of ideal circuits 0.9665676083270803
+
+
+Running on circuit:
+ ['Rz0:6', 'cnot01', 'Ry1:6', 'Ry1:10', 'cnot01', 'Rz0:2', 'Rx1:15', 'cnot01', 'Ry1:12', 'cnot01', 'Ry1:6', 'Rx1:6', 'Rz0:12', 'Rz1:11', 'Ry1:9', 'Rz1:13', 'Rx1:11', 'cnot10', 'Rx1:1', 'Rz0:5']
+Original fidelity: 0.6689717707254963
+circuit was trivially equivalent to ['Rz0:4', 'Rx1:15', 'cnot01', 'Ry1:12', 'cnot01', 'Ry1:6', 'Rx1:6', 'Rz1:11', 'Ry1:9', 'Rz1:13', 'Rx1:11', 'cnot10', 'Rz0:5', 'Rx1:1']
+fidelity of new circuit: 0.7547192935184247
+replacing ['Rx1:6', 'Rz1:11', 'Ry1:9', 'Rz1:13'] with ['Rz1:10'] for a gain of 0.00749149025582363
+replacing ['Rx1:11'] with ['Rx1:12'] for a gain of 0.0008656919832802368
+replacing ['Rx1:15'] with ['Ry1:1'] for a gain of 0.0012448796248873961
+Result:
+ ['Rz0:4', 'Ry1:1', 'cnot01', 'Ry1:12', 'cnot01', 'Ry1:6', 'Rz1:10', 'Rx1:12', 'cnot10', 'Rz0:5', 'Rx1:1']
+New fidelity: 0.764321355382416
+Fidelity of ideal circuits 0.9534563816566559
+
+
+Running on circuit:
+ ['Rx1:3', 'cnot01', 'cnot10', 'Ry0:3', 'Rx1:11', 'Ry0:14', 'Rz1:11', 'Rz1:5', 'Rz1:8', 'cnot10', 'Ry1:7', 'Ry0:7', 'Rx1:7', 'Ry1:10', 'cnot01', 'Ry0:6', 'Rx0:8', 'cnot10', 'Ry1:5', 'Rz0:12']
+Original fidelity: 0.668971771220187
+circuit was trivially equivalent to ['Rx1:3', 'cnot01', 'cnot10', 'Ry0:1', 'Rx1:11', 'Rz1:8', 'cnot10', 'Ry0:7', 'Ry1:7', 'Rx1:7', 'Ry1:10', 'cnot01', 'Ry0:6', 'Rx0:8', 'cnot10', 'Rz0:12', 'Ry1:5']
+fidelity of new circuit: 0.7105532366767987
+replacing ['Ry1:7', 'Rx1:7', 'Ry1:10'] with ['Rx1:9', 'Ry1:3'] for a gain of 0.010232496370074728
+Result:
+ ['Rx1:3', 'cnot01', 'cnot10', 'Ry0:1', 'Rx1:11', 'Rz1:8', 'cnot10', 'Ry0:7', 'Rx1:9', 'Ry1:3', 'cnot01', 'Ry0:6', 'Rx0:8', 'cnot10', 'Rz0:12', 'Ry1:5']
+New fidelity: 0.7207857330468734
+Fidelity of ideal circuits 0.9942140679815042
+
+
+Running on circuit:
+ ['Rx0:11', 'Ry0:2', 'Ry1:2', 'Rz1:9', 'Rx0:11', 'Rz1:12', 'Rx0:12', 'cnot10', 'cnot01', 'Ry0:5', 'Rx0:3', 'Rz0:9', 'Ry0:12', 'cnot01', 'Rz1:4', 'Rx1:11', 'Rx0:5', 'cnot01', 'Ry0:12', 'cnot10']
+Original fidelity: 0.6689717683416507
+circuit was trivially equivalent to ['Rx0:11', 'Ry0:2', 'Rx0:7', 'Ry1:2', 'Rz1:5', 'cnot10', 'cnot01', 'Ry0:5', 'Rx0:3', 'Rz0:9', 'Ry0:12', 'cnot01', 'Rx0:5', 'Rz1:4', 'Rx1:11', 'cnot01', 'Ry0:12', 'cnot10']
+fidelity of new circuit: 0.6964132263700265
+replacing ['Ry0:5', 'Rx0:3', 'Rz0:9'] with ['Ry0:12', 'Rx0:5'] for a gain of 0.01002888977863714
+replacing ['Ry0:12', 'Rx0:5', 'Ry0:12'] with ['Ry0:8', 'Rz0:11'] for a gain of 0.014343635388459397
+Result:
+ ['Rx0:11', 'Ry0:2', 'Rx0:7', 'Ry1:2', 'Rz1:5', 'cnot10', 'cnot01', 'Ry0:8', 'Rz0:11', 'cnot01', 'Rx0:5', 'Rz1:4', 'Rx1:11', 'cnot01', 'Ry0:12', 'cnot10']
+New fidelity: 0.720785751537123
+Fidelity of ideal circuits 0.9942140679815048
+
+
+Running on circuit:
+ ['cnot10', 'Ry1:2', 'cnot10', 'Rz0:2', 'Rx0:9', 'Rz0:8', 'Rz0:13', 'Rz1:6', 'Ry0:11', 'Rx0:6', 'Ry1:3', 'cnot01', 'Rz0:8', 'Rz1:11', 'Ry0:13', 'Ry1:6', 'Rx1:15', 'Rx0:12', 'Rz1:13', 'cnot01']
+Original fidelity: 0.668971770682488
+circuit was trivially equivalent to ['cnot10', 'Ry1:2', 'cnot10', 'Rz0:2', 'Rx0:9', 'Rz0:5', 'Ry0:11', 'Rx0:6', 'Rz0:8', 'Rz1:6', 'Ry1:3', 'cnot01', 'Ry0:13', 'Rx0:12', 'Rz1:11', 'Ry1:6', 'Rx1:15', 'Rz1:13', 'cnot01']
+fidelity of new circuit: 0.682554606308024
+replacing ['Rz0:2', 'Rx0:9', 'Rz0:5'] with ['Rz0:5', 'Ry0:7'] for a gain of 0.009829300192446322
+replacing ['Ry0:7', 'Ry0:11'] with ['Ry0:2'] for a gain of 0.01405819675237896
+replacing ['Rz0:5', 'Ry0:2', 'Rx0:6'] with ['Ry0:6', 'Rz0:2'] for a gain of 0.003628431357977191
+replacing ['Rz0:2', 'Rz0:8'] with ['Rz0:10'] for a gain of 0.014417306573187405
+replacing ['Rz1:11', 'Ry1:6', 'Rx1:15'] with ['Rx1:6', 'Rz1:13'] for a gain of 0.009172785661310745
+replacing ['Rz1:13', 'Rz1:13'] with ['Rz1:10'] for a gain of 0.014896273464401921
+Result:
+ ['cnot10', 'Ry1:2', 'cnot10', 'Ry0:6', 'Rz0:10', 'Rz1:6', 'Ry1:3', 'cnot01', 'Ry0:13', 'Rx0:12', 'Rx1:6', 'Rz1:10', 'cnot01']
+New fidelity: 0.7485569003097265
+Fidelity of ideal circuits 0.9742676063637533
+
+
+Running on circuit:
+ ['Rz0:9', 'Ry1:5', 'Ry1:13', 'Rz1:6', 'cnot10', 'Ry0:5', 'Rz0:4', 'Ry0:8', 'Rx0:10', 'Ry0:7', 'cnot01', 'Ry0:2', 'Ry0:4', 'Ry0:7', 'Ry0:11', 'Rx1:5', 'Ry1:2', 'cnot10', 'Rx1:9', 'Rx0:8']
+Original fidelity: 0.6689717690208906
+circuit was trivially equivalent to ['Rz0:9', 'Ry1:2', 'Rz1:6', 'cnot10', 'Ry0:5', 'Rz0:4', 'Ry0:8', 'Rx0:10', 'Ry0:7', 'cnot01', 'Ry0:8', 'Rx0:8', 'Rx1:5', 'Ry1:2', 'cnot10', 'Rx1:9']
+fidelity of new circuit: 0.724980342472683
+replacing ['Ry0:8', 'Rx0:8'] with ['Rz0:8'] for a gain of 0.014720036734059305
+replacing ['Ry0:8', 'Rx0:10', 'Ry0:7'] with ['Rx0:6'] for a gain of 0.0010354814389523792
+replacing ['Rz0:4'] with ['Rz0:3'] for a gain of 0.012235314014466425
+replacing ['Rz0:8'] with ['Rz0:7'] for a gain of 0.011303605313629506
+replacing ['Rz0:3', 'Rx0:6', 'Rz0:7'] with ['Rz0:11', 'Rx0:10'] for a gain of 0.003984758671820243
+replacing ['Ry0:5', 'Rz0:11', 'Rx0:10'] with ['Rz0:13', 'Rx0:5'] for a gain of 0.028732966188556808
+Result:
+ ['Rz0:9', 'Ry1:2', 'Rz1:6', 'cnot10', 'Rz0:13', 'Rx0:5', 'Rx1:5', 'cnot01', 'Ry1:2', 'cnot10', 'Rx1:9']
+New fidelity: 0.7969925062005604
+Fidelity of ideal circuits 0.9942140679815044
+
+
+Running on circuit:
+ ['Rx0:15', 'Ry0:3', 'Ry1:10', 'cnot10', 'Ry1:4', 'Ry0:5', 'Rz1:6', 'cnot10', 'Rx1:1', 'Ry1:4', 'Rz0:10', 'Rz1:13', 'Rz0:5', 'Rz0:8', 'cnot01', 'Rz1:14', 'Rx0:13', 'Rx1:3', 'Ry0:1', 'Rx0:7']
+Original fidelity: 0.6689717705340159
+circuit was trivially equivalent to ['Rx0:15', 'Ry0:3', 'Ry1:10', 'cnot10', 'Ry0:5', 'Ry1:4', 'Rz1:6', 'cnot10', 'Rz0:7', 'Rx1:1', 'Ry1:4', 'Rz1:13', 'cnot01', 'Rx0:13', 'Ry0:1', 'Rx0:7', 'Rz1:14', 'Rx1:3']
+fidelity of new circuit: 0.6964132275463796
+replacing ['Rx0:13', 'Ry0:1', 'Rx0:7'] with ['Rx0:4'] for a gain of 0.0009751842700340685
+replacing ['Rz0:7'] with ['Rz0:6'] for a gain of 0.023397412215475644
+replacing ['Rx1:1', 'Ry1:4', 'Rz1:13'] with ['Ry1:4', 'Rz1:14'] for a gain of 0.014634817363000652
+Result:
+ ['Rx0:15', 'Ry0:3', 'Ry1:10', 'cnot10', 'Ry0:5', 'Ry1:4', 'Rz1:6', 'cnot10', 'Rz0:6', 'Ry1:4', 'Rz1:14', 'cnot01', 'Rx0:4', 'Rz1:14', 'Rx1:3']
+New fidelity: 0.7354206413948899
+Fidelity of ideal circuits 0.9942140679815049
+
+
+
+Process finished with exit code 0

@@ -24,7 +24,7 @@ class SubcircuitRemover:
         self.sigmas = np.array([self.U @ u @ self.U.transpose().conjugate() for u in self.u_basis])
         self.runner = CachingRunner(circuit_key, n_qubits, noise_channels)
         self.runner.remember(self.circuit)
-        #[self.runner.remember([x, y]) for x in circuit_key.keys() for y in circuit_key.keys()]
+        [self.runner.remember([x, y]) for x in circuit_key.keys() for y in circuit_key.keys()]
         if verbose:
             print("Ready to optimize your noisy circuits")
 
