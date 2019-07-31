@@ -98,12 +98,43 @@ class SubcircuitRemover:
                 if i > j:
                     self.circuit[s] = self.circuit[s + 1]
                     self.circuit[s + 1] = name1
-                    if self.verbose:
-                        print("Re-ordering single qubit gates")
+                    return True
+            elif name1[0] == "c":
+                control = name1[-2]
+                target = name1[-1]
+                if self.circuit[s + 1][:3] == "Rx" + target:
+                    self.circuit[s] = self.circuit[s + 1]
+                    self.circuit[s + 1] = name1
+                    return True
+                elif self.circuit[s + 1][:3] == "Rz" + control:
+                    self.circuit[s] = self.circuit[s + 1]
+                    self.circuit[s + 1] = name1
+                    return True
+        return False
+
+    def do_trivial_rewrites(self):
+        for i in range(len(self.circuit) - 1):
+            g = self.circuit[i]
+            h = self.circuit[i + 1]
+            if g[:3] == h[:3]:
+                if g[0] == "R":
+                    angle = (int(g[4:]) + int(h[4:])) % 16
+                    if angle == 0:
+                        self.circuit = self.circuit[:i] + self.circuit[i + 2:]
+                    else:
+                        self.circuit = self.circuit[:i] + [g[:4] + str(angle)] + self.circuit[i + 2:]
+                    return True
+                if g == h:
+                    self.circuit = self.circuit[:i] + self.circuit[i + 2:]
                     return True
         return False
 
     def reduce_circuit(self) -> Iterable:
+        while self.do_trivial_rewrites() or self.reorder():
+            pass
+        if self.verbose:
+            print("circuit was trivially equivalent to", self.circuit)
+            print("fidelity of new circuit:", self.fidelity(self.circuit))
         while self.remove_any_subcircuit() or self.reorder() or self.replace_any_subcircuit() or self.replace_any_with2():
             pass
         return self.circuit

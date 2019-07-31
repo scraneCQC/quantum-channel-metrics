@@ -17,7 +17,7 @@ noise = [depolarising_channel(0.01, n_qubits)]
 
 
 def run():
-    circuit1 = random.choices(list(key.keys()), k=20, weights=weights)
+    circuit1 = random.choices(list(key.keys()), k=10, weights=weights)
 
     remover = SubcircuitRemover(circuit1, key, noise, n_qubits=n_qubits, verbose=True)
     u1 = remover.unitary
@@ -56,5 +56,5 @@ def synth_n_qubits():
     return synthesise(u)
 
 
-run()
+run_multiple()
 
