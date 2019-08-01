@@ -42,6 +42,7 @@ class RewriteTket:
         self.d2 = 2 ** (2 * self.n_qubits)
         self.sigmas = np.array([self.target @ u @ self.target.transpose().conjugate() for u in self.u_basis])
         self.noise_process = self.matrix_list_product([self.get_individual_process_matrix(c) for c in noise_channels])
+        self.cnot_processes = {(i, j): self.get_individual_process_matrix([cnot(i, j, self.n_qubits)]) for i in range(self.n_qubits) for j in range(self.n_qubits) if i != j}
         if self.verbose:
             print("original fidelity is", self.fidelity(self.instructions))
 
@@ -63,8 +64,10 @@ class RewriteTket:
         if self.verbose:
             print("original fidelity is", self.fidelity(self.instructions))
 
-    def matrix_list_product(self, matrices, default_size=2):
+    def matrix_list_product(self, matrices, default_size=None):
         if len(matrices) == 0:
+            if default_size is None:
+                default_size = 2 ** self.n_qubits
             return np.eye(default_size)
         return reduce(lambda x, y: x @ y, matrices, np.eye(matrices[0].shape[0]))
 
@@ -139,7 +142,13 @@ class RewriteTket:
                           for d2 in self.u_basis]).transpose()
 
     def get_process_matrix(self, instructions):
-        return self.matrix_list_product([self.noise_process @ self.get_individual_process_matrix([m]) for m in self.instructions_to_matrices(instructions)], default_size=self.d2)
+        m = np.eye(self.d2)
+        for inst in instructions:
+            if inst.op.get_type() == OpType.CX:
+                m = self.cnot_processes[tuple(inst.qubits)] @ m
+            else:
+                m = self.get_individual_process_matrix(self.instructions_to_matrices([inst])) @ m
+        return m
 
     def fidelity(self, instructions):
         s = np.einsum('kij,lk,lji->', self.sigmas, self.get_process_matrix(instructions), self.state_basis, optimize=True).real

@@ -16,7 +16,6 @@ def run():
 
 def run_multiple(n_qubits, n_iter):
     c = Circuit(n_qubits)
-    c.H(0)
     rewriter = RewriteTket(c, standard_noise_channels(0.01, n_qubits), verbose=True)
     for _ in range(n_iter):
         circuit = random_pauli_gadget(n_qubits)
