@@ -1,4 +1,4 @@
-from diamond_distance import monte_carlo_f_algorithm
+from metrics.diamond_distance import monte_carlo_f_algorithm
 from noise import *
 import math
 

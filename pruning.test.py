@@ -1,5 +1,5 @@
 from pruning_circuits import generate_random_circuit, prune_circuit, prune_circuit_v2, find_threshold
-import J_fidelity
+from metrics import J_fidelity
 from noise import standard_noise_channels
 import numpy as np
 from typing import Tuple

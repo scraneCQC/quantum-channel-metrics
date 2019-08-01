@@ -1,4 +1,4 @@
-from S_fidelity import *
+from metrics.S_fidelity import *
 from noise import *
 import math
 from density_runner import ops

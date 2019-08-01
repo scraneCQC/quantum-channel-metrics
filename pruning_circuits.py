@@ -3,8 +3,7 @@ import math
 from common_gates import cnot, Rx, Ry, Rz
 from typing import Iterable, Tuple, Dict, List, Any
 import numpy as np
-import Pauli
-import J_fidelity
+from metrics import J_fidelity
 from noise import standard_noise_channels
 
 

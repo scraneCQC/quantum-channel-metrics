@@ -1,6 +1,4 @@
-from approximation_runner import *
-import density_runner
-from Pauli import *
+from metrics.approximation_runner import *
 import time
 
 s = "HTSHTHTSHTSHTHTSHTHTHTSHTSHTHTSHTSHTSHTSHTSHTHTSHTSHTHT"

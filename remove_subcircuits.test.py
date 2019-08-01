@@ -1,14 +1,10 @@
 from remove_subcircuits import *
 import random
-from density_runner import ops
-from noise import standard_noise_channels, depolarising_channel
-from pruning_circuits import generate_random_circuit
-from common_gates import clifford_T_gate_set, random_two_qubit_circuit, discrete_angle_key, get_cnot_key, random_unitary
-import qft
-from J_fidelity import f_pro_experimental, f_pro
-import math
+from noise import depolarising_channel
+from common_gates import discrete_angle_key, get_cnot_key
+from metrics.J_fidelity import f_pro_experimental, f_pro
 
-n_qubits = 2
+n_qubits = 3
 precision = 4
 key = discrete_angle_key(precision, n_qubits)
 key.update(get_cnot_key(n_qubits))

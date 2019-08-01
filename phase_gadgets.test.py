@@ -1,6 +1,6 @@
 from common_gates import get_Rz_key, cnot_key
 import math
-from J_fidelity import effect_of_noise
+from metrics.J_fidelity import effect_of_noise
 from noise import standard_noise_channels
 from typing import Dict
 import numpy as np

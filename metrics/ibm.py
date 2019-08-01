@@ -1,7 +1,7 @@
 from pytket.backends.ibm import IBMQBackend
 from pytket import Circuit
 from typing import Iterable, Dict, Any, Callable
-from approximation_runner import circuit_from_string
+from metrics.approximation_runner import circuit_from_string
 from itertools import product
 import math
 from Pauli import get_diracs, I1, X, Y, Z

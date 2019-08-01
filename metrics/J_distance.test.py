@@ -1,4 +1,4 @@
-from J_distance import *
+from metrics.J_distance import *
 from noise import *
 import math
 

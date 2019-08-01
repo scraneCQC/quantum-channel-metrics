@@ -1,12 +1,7 @@
 import numpy as np
 import random
 from typing import Dict
-from J_fidelity import f_pro_experimental
-from common_gates import Rz, random_unitary
-import math
-import cmath
-from functools import reduce
-
+from metrics.J_fidelity import f_pro_experimental
 
 ops = {"S": np.array([[1, 0], [0, complex(0, 1)]]),
        "T": np.array([[1, 0], [0, complex(0.5 ** 0.5, 0.5 ** 0.5)]]),

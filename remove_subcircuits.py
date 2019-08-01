@@ -2,7 +2,9 @@ from functools import reduce
 from typing import Iterable, Dict
 from Pauli import *
 from caching_runner import CachingRunner
-from J_fidelity import f_pro
+from metrics.J_fidelity import f_pro
+from noise import depolarising_channel
+from common_gates import discrete_angle_key, cnot12, cnot21
 
 
 class SubcircuitRemover:
@@ -22,9 +24,16 @@ class SubcircuitRemover:
         self.d2 = 2 ** (2 * self.n_qubits)
         self.U = reduce(lambda x, y: x @ y, [self.key[s] for s in self.circuit], np.eye(2 ** self.n_qubits))
         self.sigmas = np.array([self.U @ u @ self.U.transpose().conjugate() for u in self.u_basis])
-        self.runner = CachingRunner(circuit_key, n_qubits, noise_channels)
-        self.runner.remember(self.circuit)
-        [self.runner.remember([x, y]) for x in circuit_key.keys() for y in circuit_key.keys()]
+        if n_qubits == 2:
+            self.runner = CachingRunner(circuit_key, n_qubits, noise_channels)
+            self.runner.remember(self.circuit)
+            [self.runner.remember([x, y]) for x in circuit_key.keys() for y in circuit_key.keys()]
+        else:
+            original_key = discrete_angle_key(4, 2)
+            keys = [{k[:3] + str(int(k[3]) - i): v for k, v in original_key.items()} for i in range(n_qubits - 1)]
+            for i in range(n_qubits - 1):
+                keys[i].update({"cnot" + str(i) + str(i + 1): cnot12, "cnot" + str(i + 1) + str(i): cnot21})
+            self.runners = [CachingRunner(keys[i], 2, [depolarising_channel(0.01, 2)]) for i in range(n_qubits - 1)]
         if verbose:
             print("Ready to optimize your noisy circuits")
 
@@ -56,13 +65,14 @@ class SubcircuitRemover:
         return False
 
     def should_replace_with_2(self, start: int, end: int, original_fid: float) -> bool:
-        replace_fid = [([g, h], self.fidelity(self.circuit[:start] + [g, h] + self.circuit[end:])) for g in self.gates for h in self.gates]
-        g, f = max(replace_fid, key=lambda x: x[1])
-        if f - original_fid > 1e-5:
-            if self.verbose:
-                print("replacing", self.circuit[start:end], "with", g, "for a gain of", f - original_fid)
-            self.circuit = self.circuit[:start] + g + self.circuit[end:]
-            return True
+        for g in self.gates:
+            for h in self.gates:
+                replace_fid = self.fidelity(self.circuit[:start] + [g, h] + self.circuit[end:])
+                if replace_fid - original_fid > 1e-5:
+                    if self.verbose:
+                        print("replacing", self.circuit[start:end], "with", [g, h], "for a gain of", replace_fid - original_fid)
+                    self.circuit = self.circuit[:start] + [g, h] + self.circuit[end:]
+                    return True
         return False
 
     def remove_any_subcircuit(self) -> bool:
@@ -149,9 +159,7 @@ class SubcircuitRemover:
 
 
 def run_all(circuits: Iterable, circuit_key: Dict, noise_channels: Iterable, n_qubits: int = 1, verbose: bool = False):
-    if len(circuits) == 0:
-        return []
-    sr = SubcircuitRemover(circuits[0], circuit_key, noise_channels, n_qubits, verbose)
+    sr = SubcircuitRemover([], circuit_key, noise_channels, n_qubits, verbose)
     res = []
     for c in circuits:
         sr.set_circuit(c)

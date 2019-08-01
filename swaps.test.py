@@ -1,6 +1,5 @@
 from spread_the_swaps import *
-from S_fidelity import effect_of_noise
-import random
+from metrics.S_fidelity import effect_of_noise
 from noise import *
 
 

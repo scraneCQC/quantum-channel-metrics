@@ -1,8 +1,5 @@
-import approximations
-import J_fidelity
-import J_distance
-import S_fidelity
-import diamond_distance
+from selinger_clifford_t import approximations
+from metrics import J_distance, J_fidelity, S_fidelity, diamond_distance
 import numpy as np
 import math
 import matplotlib.pyplot as plt

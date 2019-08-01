@@ -1,4 +1,4 @@
-from J_fidelity import *
+from metrics.J_fidelity import *
 from noise import *
 import math
 from Pauli import *
