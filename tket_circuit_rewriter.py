@@ -54,6 +54,15 @@ class RewriteTket:
         self.target = target
         self.sigmas = np.array([self.target @ u @ self.target.transpose().conjugate() for u in self.u_basis])
 
+    def set_circuit_and_target(self, circuit):
+        if cleanup.apply(circuit) and self.verbose:
+            print("Cleaned circuit up:")
+            print(circuit.get_commands())
+        self.set_circuit(circuit)
+        self.set_target_unitary(self.matrix_list_product(self.instructions_to_matrices(self.instructions)))
+        if self.verbose:
+            print("original fidelity is", self.fidelity(self.instructions))
+
     def matrix_list_product(self, matrices, default_size=2):
         if len(matrices) == 0:
             return np.eye(default_size)

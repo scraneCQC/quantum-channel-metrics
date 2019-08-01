@@ -1,0 +1,109 @@
+/home/simon/PycharmProjects/CQC/metrics/venv/bin/python /home/simon/PycharmProjects/CQC/metrics/pauli_gadget_optimiser.py
+Cleaned circuit up:
+[U3(0.5PI, 0PI, 1PI) [0]]
+original fidelity is 0.9415514901665076
+s YZY
+alpha 0.3501514368995027
+Cleaned circuit up:
+[U3(0.5PI, 0.5PI, 1.5PI) [0], U3(0.5PI, 0.5PI, 1.5PI) [2], CX [2, 1], CX [0, 1], U1(0.350151PI) [1], CX [2, 1], CX [0, 1], U3(0.5PI, 1.5PI, 0.5PI) [2], U3(0.5PI, 1.5PI, 0.5PI) [0]]
+original fidelity is 0.583442405915486
+Removing U1(0.350151PI) [1] to improve fidelity by 0.017044322005998258
+New fidelity is 0.6004867279214843
+[U3(0.5PI, 0.5PI, 1.5PI) [0], U3(0.5PI, 0.5PI, 1.5PI) [2], CX [2, 1], CX [0, 1], CX [2, 1], CX [0, 1], U3(0.5PI, 1.5PI, 0.5PI) [2], U3(0.5PI, 1.5PI, 0.5PI) [0]]
+
+
+
+s YXX
+alpha 0.14627726615380965
+Cleaned circuit up:
+[U3(0.5PI, 1.5PI, 0.5PI) [0], U3(0.5PI, 0PI, 1PI) [1], U3(1.5PI, 1.5PI, 0PI) [2], CX [2, 1], CX [1, 0], U3(0.5PI, 0.5PI, 1.64628PI) [0], CX [1, 0], CX [2, 1], U3(0.5PI, 0PI, 1PI) [1], U3(0.5PI, 0PI, 0.5PI) [2]]
+original fidelity is 0.5496678308825451
+Didn't find anything to improve
+[U3(0.5PI, 1.5PI, 0.5PI) [0], U3(0.5PI, 0PI, 1PI) [1], U3(1.5PI, 1.5PI, 0PI) [2], CX [2, 1], CX [1, 0], U3(0.5PI, 0.5PI, 1.64628PI) [0], CX [1, 0], CX [2, 1], U3(0.5PI, 0PI, 1PI) [1], U3(0.5PI, 0PI, 0.5PI) [2]]
+
+
+
+s XYZ
+alpha 1.0006453692520934
+Cleaned circuit up:
+[U3(0.5PI, 0PI, 0PI) [0], U3(0.5PI, 0.5PI, 1.5PI) [1], CX [2, 1], CX [1, 0], U3(1PI, 0PI, 0.000645369PI) [0], CX [1, 0], U3(0.5PI, 0PI, 1PI) [0], U3(0.5PI, 1.5PI, 0.5PI) [1], CX [2, 1]]
+original fidelity is 0.5833584790330959
+Commuting CX [1, 0] with U3(0.5PI, 0PI, 1PI) [0] to improve fidelity by 0.03563179396079175
+New fidelity is 0.6189902729938876
+[U3(0.5PI, 0PI, 0PI) [0], U3(0.5PI, 0.5PI, 1.5PI) [1], CX [2, 1], CX [1, 0], U3(1.5PI, 0PI, 1.00065PI) [0], CX [1, 0], U3(0.5PI, 1.5PI, 0.5PI) [1], CX [2, 1]]
+
+
+
+s XYX
+alpha 0.2838569957214767
+Cleaned circuit up:
+[U3(0.5PI, 0PI, 0PI) [0], U3(0.5PI, 0.5PI, 1.5PI) [1], U3(1.5PI, 1.5PI, 0PI) [2], CX [2, 1], CX [1, 0], U3(1PI, 0PI, 1.28386PI) [0], CX [1, 0], U3(0.5PI, 0PI, 1PI) [0], U3(0.5PI, 1.5PI, 0.5PI) [1], CX [2, 1], U3(0.5PI, 0PI, 0.5PI) [2]]
+original fidelity is 0.5176361105363493
+Didn't find anything to improve
+[U3(0.5PI, 0PI, 0PI) [0], U3(0.5PI, 0.5PI, 1.5PI) [1], U3(1.5PI, 1.5PI, 0PI) [2], CX [2, 1], CX [1, 0], U3(1PI, 0PI, 1.28386PI) [0], CX [1, 0], U3(0.5PI, 0PI, 1PI) [0], U3(0.5PI, 1.5PI, 0.5PI) [1], CX [2, 1], U3(0.5PI, 0PI, 0.5PI) [2]]
+
+
+
+s ZZY
+alpha 1.8031486778305474
+Cleaned circuit up:
+[U3(1PI, 0PI, 1PI) [0], U3(0.5PI, 0.5PI, 1.5PI) [2], CX [2, 1], CX [1, 0], U3(1PI, 0PI, 0.803149PI) [0], CX [1, 0], CX [2, 1], U3(0.5PI, 1.5PI, 0.5PI) [2]]
+original fidelity is 0.6190659009125032
+Didn't find anything to improve
+[U3(1PI, 0PI, 1PI) [0], U3(0.5PI, 0.5PI, 1.5PI) [2], CX [2, 1], CX [1, 0], U3(1PI, 0PI, 0.803149PI) [0], CX [1, 0], CX [2, 1], U3(0.5PI, 1.5PI, 0.5PI) [2]]
+
+
+
+s XZY
+alpha 0.7979830760160911
+Cleaned circuit up:
+[U3(0.5PI, 0PI, 0PI) [0], U3(0.5PI, 0.5PI, 1.5PI) [2], CX [2, 1], CX [1, 0], U3(1PI, 0PI, 1.79798PI) [0], CX [1, 0], U3(0.5PI, 0PI, 1PI) [0], CX [2, 1], U3(0.5PI, 1.5PI, 0.5PI) [2]]
+original fidelity is 0.5833958531448138
+Didn't find anything to improve
+[U3(0.5PI, 0PI, 0PI) [0], U3(0.5PI, 0.5PI, 1.5PI) [2], CX [2, 1], CX [1, 0], U3(1PI, 0PI, 1.79798PI) [0], CX [1, 0], U3(0.5PI, 0PI, 1PI) [0], CX [2, 1], U3(0.5PI, 1.5PI, 0.5PI) [2]]
+
+
+
+s XZX
+alpha 0.5461909768047313
+Cleaned circuit up:
+[U3(1.5PI, 1.5PI, 0PI) [0], U3(1.5PI, 1.5PI, 0PI) [2], CX [2, 1], CX [0, 1], U1(0.546191PI) [1], CX [2, 1], CX [0, 1], U3(0.5PI, 0PI, 0.5PI) [2], U3(0.5PI, 0PI, 0.5PI) [0]]
+original fidelity is 0.5831195898342788
+Didn't find anything to improve
+[U3(1.5PI, 1.5PI, 0PI) [0], U3(1.5PI, 1.5PI, 0PI) [2], CX [2, 1], CX [0, 1], U1(0.546191PI) [1], CX [2, 1], CX [0, 1], U3(0.5PI, 0PI, 0.5PI) [2], U3(0.5PI, 0PI, 0.5PI) [0]]
+
+
+
+s XYX
+alpha 1.1044608730156331
+Cleaned circuit up:
+[U3(0.5PI, 0PI, 0PI) [0], U3(0.5PI, 0.5PI, 1.5PI) [1], U3(1.5PI, 1.5PI, 0PI) [2], CX [2, 1], CX [1, 0], U3(1PI, 0PI, 0.104461PI) [0], CX [1, 0], U3(0.5PI, 0PI, 1PI) [0], U3(0.5PI, 1.5PI, 0.5PI) [1], CX [2, 1], U3(0.5PI, 0PI, 0.5PI) [2]]
+original fidelity is 0.517471895579911
+Commuting CX [1, 0] with U3(0.5PI, 0PI, 1PI) [0] to improve fidelity by 0.03121087375802023
+New fidelity is 0.5486827693379313
+[U3(0.5PI, 0PI, 0PI) [0], U3(0.5PI, 0.5PI, 1.5PI) [1], U3(1.5PI, 1.5PI, 0PI) [2], CX [2, 1], CX [1, 0], U3(1.5PI, 0PI, 1.10446PI) [0], CX [1, 0], U3(0.5PI, 1.5PI, 0.5PI) [1], CX [2, 1], U3(0.5PI, 0PI, 0.5PI) [2]]
+
+
+
+s ZYX
+alpha 1.114799795694244
+Cleaned circuit up:
+[U3(1PI, 0PI, 1PI) [0], U3(0.5PI, 0.5PI, 1.5PI) [1], U3(1.5PI, 1.5PI, 0PI) [2], CX [2, 1], CX [1, 0], U3(1PI, 0PI, 0.1148PI) [0], CX [1, 0], U3(0.5PI, 1.5PI, 0.5PI) [1], CX [2, 1], U3(0.5PI, 0PI, 0.5PI) [2]]
+original fidelity is 0.5493416681593615
+Didn't find anything to improve
+[U3(1PI, 0PI, 1PI) [0], U3(0.5PI, 0.5PI, 1.5PI) [1], U3(1.5PI, 1.5PI, 0PI) [2], CX [2, 1], CX [1, 0], U3(1PI, 0PI, 0.1148PI) [0], CX [1, 0], U3(0.5PI, 1.5PI, 0.5PI) [1], CX [2, 1], U3(0.5PI, 0PI, 0.5PI) [2]]
+
+
+
+s ZZZ
+alpha 1.6778059329658395
+Cleaned circuit up:
+[CX [2, 1], CX [0, 1], U1(1.67781PI) [1], CX [2, 1], CX [0, 1]]
+original fidelity is 0.7406626913200116
+Didn't find anything to improve
+[CX [2, 1], CX [0, 1], U1(1.67781PI) [1], CX [2, 1], CX [0, 1]]
+
+
+
+
+Process finished with exit code 0
