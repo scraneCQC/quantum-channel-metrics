@@ -4,13 +4,14 @@ import cmath
 import random
 from typing import Dict
 from scipy.linalg import block_diag
+from Pauli import X, Y, Z
 
 
 cnot12 = np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 0, 1], [0, 0, 1, 0]])
 cnot21 = np.array([[1, 0, 0, 0], [0, 0, 0, 1], [0, 0, 1, 0], [0, 1, 0, 0]])
 
 
-def cnot(i: int, j: int, n_qubits: int) -> np.ndarray:
+def adjacent_cnot(i: int, j: int, n_qubits: int) -> np.ndarray:
     if j == i + 1:
         gate = cnot12
     elif j == i - 1:
@@ -25,14 +26,24 @@ def cnot(i: int, j: int, n_qubits: int) -> np.ndarray:
     return gate
 
 
-cnot_key1 = {"cnot" + str(i) + str(i + 1): cnot(i, i + 1, 4) for i in range(3)}
-cnot_key2 = {"cnot" + str(i + 1) + str(i): cnot(i + 1, i, 4) for i in range(3)}
+def cnot(control: int, target: int, n_qubits: int) -> np.ndarray:
+    if control == target:
+        raise ValueError("control and target cannot be equal")
+    if control < target:
+        not_target = multi_qubit_matrix(X, target - control, n_qubits - control)
+        gate = block_diag(np.eye(2 ** ()), not_target)
+        return np.kron(np.eye(2 ** control), gate)
+    else:
+        pass
+
+cnot_key1 = {"cnot" + str(i) + str(i + 1): adjacent_cnot(i, i + 1, 4) for i in range(3)}
+cnot_key2 = {"cnot" + str(i + 1) + str(i): adjacent_cnot(i + 1, i, 4) for i in range(3)}
 cnot_key = {**cnot_key1, **cnot_key2, "cnot01-23": np.kron(cnot12, cnot12), "cnot01-32": np.kron(cnot12, cnot21)}
 
 
 def get_cnot_key(n_qubits):
-    key1 = {"cnot" + str(i) + str(i + 1): cnot(i, i + 1, n_qubits) for i in range(n_qubits - 1)}
-    key2 = {"cnot" + str(i + 1) + str(i): cnot(i + 1, i, n_qubits) for i in range(n_qubits - 1)}
+    key1 = {"cnot" + str(i) + str(i + 1): adjacent_cnot(i, i + 1, n_qubits) for i in range(n_qubits - 1)}
+    key2 = {"cnot" + str(i + 1) + str(i): adjacent_cnot(i + 1, i, n_qubits) for i in range(n_qubits - 1)}
     return {**key1, **key2}
 
 
@@ -117,6 +128,7 @@ def get_Rx_key(angle: float, n_qubits: int) -> Dict[str, np.ndarray]:
 
 
 def multi_qubit_matrix(gate: np.ndarray, i: int, n_qubits: int) -> np.ndarray:
+    return np.kron(np.kron(np.eye(2 ** i), gate), np.eye(2 ** (n_qubits - i - 1)))
     for _ in range(i):
         gate = np.kron(np.eye(2), gate)
     for _ in range(n_qubits - i - 1):
@@ -125,6 +137,9 @@ def multi_qubit_matrix(gate: np.ndarray, i: int, n_qubits: int) -> np.ndarray:
 
 
 H = np.array([[1, 1], [1, -1]]) * 0.5 ** 0.5
+S = np.array([[1, 0], [0, complex(0, 1)]])
+T = np.array([[1, 0], [0, complex(0.5 ** 0.5, 0.5 ** 0.5)]])
+V = Rx(math.pi / 2, 0, 1)
 
 single_qubit_Clifford_T = {"S": np.array([[1, 0], [0, complex(0, 1)]]),
        "T": np.array([[1, 0], [0, complex(0.5 ** 0.5, 0.5 ** 0.5)]]),

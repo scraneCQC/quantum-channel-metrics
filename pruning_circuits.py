@@ -1,6 +1,6 @@
 import random
 import math
-from common_gates import cnot, Rx, Ry, Rz
+from common_gates import adjacent_cnot, Rx, Ry, Rz
 from typing import Iterable, Tuple, Dict, List, Any
 import numpy as np
 from metrics import J_fidelity
@@ -19,10 +19,10 @@ def generate_random_circuit(n_qubits: int, n_gates: int) -> Tuple[List[str], Dic
             direction = random.randint(0, 1)
             i = random.choice(list(range(n_qubits - 1)))
             if direction == 0:
-                gate = cnot(i, i + 1, n_qubits)
+                gate = adjacent_cnot(i, i + 1, n_qubits)
                 s = "cnot" + str(i) + "-" + str(i + 1)
             else:
-                gate = cnot(i + 1, i, n_qubits)
+                gate = adjacent_cnot(i + 1, i, n_qubits)
                 s = "cnot" + str(i) + "-" + str(i + 1)
         elif gate_type == "rx":
             theta = random.random() * math.pi

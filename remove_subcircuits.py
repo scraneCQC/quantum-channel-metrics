@@ -24,7 +24,7 @@ class SubcircuitRemover:
         self.d2 = 2 ** (2 * self.n_qubits)
         self.U = reduce(lambda x, y: x @ y, [self.key[s] for s in self.circuit], np.eye(2 ** self.n_qubits))
         self.sigmas = np.array([self.U @ u @ self.U.transpose().conjugate() for u in self.u_basis])
-        if n_qubits == 2:
+        if True:
             self.runner = CachingRunner(circuit_key, n_qubits, noise_channels)
             self.runner.remember(self.circuit)
             [self.runner.remember([x, y]) for x in circuit_key.keys() for y in circuit_key.keys()]
