@@ -1,6 +1,6 @@
 from pytket import Circuit, Transform, OpType
 from common_gates import multi_qubit_matrix, H, Rx, Ry, Rz, U3, cnot
-from Pauli import X, Y, Z, get_diracs
+from Pauli import X, Y, Z, get_diracs, one_qubit_diracs
 from functools import reduce
 import numpy as np
 
@@ -10,7 +10,6 @@ cleanup = Transform.sequence([Transform.RebaseToRzRx(),
                                   Transform.RemoveRedundancies(),
                                   Transform.ReduceSingles(),
                                   Transform.CommuteRzRxThroughCX()]))])
-
 
 matrices_no_params = {OpType.Z: lambda i, n: multi_qubit_matrix(Z, i[0], n),
                       OpType.X: lambda i, n: multi_qubit_matrix(X, i[0], n),
@@ -142,9 +141,19 @@ class RewriteTket:
         return np.vstack([[np.einsum('ij,ji->', sum(e @ d2 @ e.transpose().conjugate() for e in channel), d1) /
                            (2 ** self.n_qubits) for d1 in self.u_basis] for d2 in self.u_basis]).transpose()
 
-    def get_unitary_process_matrix(self, unitary):
-        return np.vstack([[np.einsum('ij,ji->', unitary @ d2 @ unitary.transpose().conjugate(), d1) /
-                           (2 ** self.n_qubits) for d1 in self.u_basis] for d2 in self.u_basis]).transpose()
+    def get_single_qubit_process_matrix(self, instruction):
+        t = instruction.op.get_type()
+        qubit = instruction.qubits[0]
+        if t in matrices_no_params:
+            gate = matrices_no_params[t]([0], 1)
+        elif t in matrices_with_params:
+            gate = matrices_with_params[t]([0], 1, instruction.op.get_params())
+        else:
+            raise ValueError("Unexpected instruction", instruction)
+        little_process = np.vstack([[np.einsum('ij,ji->', gate @ d2 @ gate.transpose().conjugate(), d1) / 2
+                                     for d1 in one_qubit_diracs] for d2 in one_qubit_diracs]).transpose()
+        z = np.kron(np.kron(np.eye(4 ** qubit), little_process), np.eye(4 ** (self.n_qubits - qubit - 1)))
+        return z
 
     def get_process_matrix(self, instructions):
         m = np.eye(self.d2)
@@ -152,7 +161,7 @@ class RewriteTket:
             if inst.op.get_type() == OpType.CX:
                 m = m @ self.cnot_processes[tuple(inst.qubits)] @ self.noise_process
             else:
-                m = m @ self.get_unitary_process_matrix(self.instruction_to_matrix(inst)) @ self.noise_process
+                m = m @ self.get_single_qubit_process_matrix(inst) @ self.noise_process
         return m
 
     def fidelity(self, instructions):

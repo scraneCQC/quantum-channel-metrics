@@ -8,14 +8,14 @@ from itertools import product
 def run(n_qubits):
     circuit = random_pauli_gadget(n_qubits)
     Transform.OptimisePauliGadgets().apply(circuit)
-    rewriter = RewriteTket(circuit, standard_noise_channels(0.01, n_qubits), verbose=True)
+    rewriter = RewriteTket(circuit, standard_noise_channels(0.1, n_qubits), verbose=True)
     rewriter.reduce()
     print(rewriter.instructions)
 
 
 def run_multiple(n_qubits, n_iter):
     c = Circuit(n_qubits)
-    rewriter = RewriteTket(c, standard_noise_channels(0.01, n_qubits), verbose=True)
+    rewriter = RewriteTket(c, standard_noise_channels(0.1, n_qubits), verbose=True)
     for _ in range(n_iter):
         circuit = random_pauli_gadget(n_qubits)
         Transform.OptimisePauliGadgets().apply(circuit)
@@ -38,6 +38,7 @@ def run_multiple_angles(n_qubits, n_angles, s):
     return total / n_angles
 
 
-n_qubits = 3
-for s in ["".join(x) for x in product("XYZ", repeat=n_qubits)]:
-    print(s, run_multiple_angles(n_qubits, 10, s))
+n_qubits = 2
+# for s in ["".join(x) for x in product("XYZ", repeat=n_qubits)]:
+#     print(s, run_multiple_angles(n_qubits, 10, s))
+run_multiple(3, 10)
