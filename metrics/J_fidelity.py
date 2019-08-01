@@ -1,8 +1,8 @@
 from Pauli import *
 import math
 from metrics.approximation_runner import get_pauli_expectation_v2
-import density_runner
-from density_runner import apply_channel
+from metrics import density_runner
+from metrics.density_runner import apply_channel
 from pytket import Circuit
 from itertools import product
 from typing import Iterable, Any, Dict, Optional

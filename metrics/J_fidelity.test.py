@@ -2,7 +2,7 @@ from metrics.J_fidelity import *
 from noise import *
 import math
 from Pauli import *
-from density_runner import ops
+from metrics.density_runner import ops
 
 
 print(f_pro(identity_channel(2), np.eye(4)))

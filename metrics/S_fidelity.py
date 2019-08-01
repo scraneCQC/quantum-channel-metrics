@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.linalg import sqrtm
 import math
-from density_runner import apply_channel, run_by_matrices, ops
+from metrics.density_runner import apply_channel, run_by_matrices, ops
 from metrics.diamond_distance import random_densities
 from typing import Iterable, Any, Dict, Optional
 

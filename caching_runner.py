@@ -31,7 +31,7 @@ class CachingRunner:
         return reduce(lambda x, y: x @ y, [self.cache[s] for s in circuit], self.I)
 
     def decompose(self, density):
-        return [np.trace(density @ d) / (2 ** self.n_qubits) for d in self.diracs]
+        return [np.einsum('ij,ji->', density, d) / (2 ** self.n_qubits) for d in self.diracs]
 
     def process_matrix(self, channel):
         return np.vstack([self.decompose(sum(e @ d @ e.transpose().conjugate() for e in channel))
@@ -45,15 +45,6 @@ class CachingRunner:
 
     def run(self, circuit, density):
         start = np.array([[r] for r in self.decompose(density)])
-        if "".join(circuit) in self.cache:
-            return self.to_density(self.cache["".join(circuit)] @ start)
-        mat = self.get_matrix(circuit)
-        self.cache.update({"".join(circuit): mat})
-        return self.to_density(mat @ start)
-
-    def run_on_basis(self, circuit, k):
-        start = np.zeros((self.d2))
-        start[k] = 1
         if "".join(circuit) in self.cache:
             return self.to_density(self.cache["".join(circuit)] @ start)
         mat = self.get_matrix(circuit)

@@ -1,7 +1,7 @@
 from metrics.S_fidelity import *
 from noise import *
 import math
-from density_runner import ops
+from metrics.density_runner import ops
 
 
 print([np.trace(rho) for rho in random_densities(2, 10)])

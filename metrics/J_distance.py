@@ -1,8 +1,7 @@
 import numpy as np
 from scipy.linalg import sqrtm
-from density_runner import apply_channel, ops
+from metrics.density_runner import apply_channel, ops
 from typing import Iterable, Any, Dict, Optional
-from noise import depolarising_channel, amplitude_damping_channel, phase_damping_channel
 
 
 def trace_norm(m1: np.ndarray, m2: np.ndarray) -> float:

@@ -1,8 +1,7 @@
-import numpy as np
-from scipy.linalg import sqrtm, block_diag
+from scipy.linalg import sqrtm
 import random
 from Pauli import *
-from density_runner import apply_channel, run_by_matrices, ops
+from metrics.density_runner import apply_channel, run_by_matrices, ops
 import math
 from typing import List, Iterable, Any, Dict, Optional
 
