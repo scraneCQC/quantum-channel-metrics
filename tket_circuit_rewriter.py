@@ -41,10 +41,11 @@ class RewriteTket:
         self.state_basis = np.array(self.u_basis)
         self.d2 = 2 ** (2 * self.n_qubits)
         self.sigmas = np.array([self.target @ u @ self.target.transpose().conjugate() for u in self.u_basis])
-        self.noise_process = self.matrix_list_product([self.get_individual_process_matrix(c) for c in noise_channels])
+        self.noise_process = self.matrix_list_product([self.get_individual_process_matrix(c) for c in noise_channels], default_size=self.d2)
         self.cnot_processes = {(i, j): self.get_individual_process_matrix([cnot(i, j, self.n_qubits)]) for i in range(self.n_qubits) for j in range(self.n_qubits) if i != j}
+        self.original_fidelity = self.fidelity(self.instructions)
         if self.verbose:
-            print("original fidelity is", self.fidelity(self.instructions))
+            print("original fidelity is", self.original_fidelity)
 
     def set_circuit(self, circuit: Circuit):
         self.circuit = circuit
@@ -61,8 +62,9 @@ class RewriteTket:
             print(circuit.get_commands())
         self.set_circuit(circuit)
         self.set_target_unitary(self.matrix_list_product([self.instruction_to_matrix(inst) for inst in self.instructions]))
+        self.original_fidelity = self.fidelity(self.instructions)
         if self.verbose:
-            print("original fidelity is", self.fidelity(self.instructions))
+            print("original fidelity is", self.original_fidelity)
 
     def matrix_list_product(self, matrices, default_size=None):
         if len(matrices) == 0:
@@ -87,7 +89,8 @@ class RewriteTket:
             return False
         f, c, i = max(diffs, key=lambda x: x[0])
         if f > 1e-5:
-            print("Removing", self.instructions[i], "to improve fidelity by", f)
+            if self.verbose:
+                print("Removing", self.instructions[i], "to improve fidelity by", f)
             self.set_circuit(c)
             return True
         return False
@@ -110,7 +113,8 @@ class RewriteTket:
         diffs = [self.should_commute(i, original_fidelity) for i in range(len(self.instructions) - 1)]
         f, c, i = max(diffs, key=lambda x: x[0])
         if f > 1e-5:
-            print("Commuting", self.instructions[i], "with", self.instructions[i + 1], "to improve fidelity by", f)
+            if self.verbose:
+                print("Commuting", self.instructions[i], "with", self.instructions[i + 1], "to improve fidelity by", f)
             self.set_circuit(c)
             return True
         return False
@@ -146,9 +150,9 @@ class RewriteTket:
         m = np.eye(self.d2)
         for inst in instructions:
             if inst.op.get_type() == OpType.CX:
-                m = self.cnot_processes[tuple(inst.qubits)] @ m
+                m = m @ self.cnot_processes[tuple(inst.qubits)] @ self.noise_process
             else:
-                m = self.get_unitary_process_matrix(self.instruction_to_matrix(inst)) @ m
+                m = m @ self.get_unitary_process_matrix(self.instruction_to_matrix(inst)) @ self.noise_process
         return m
 
     def fidelity(self, instructions):
@@ -164,4 +168,4 @@ class RewriteTket:
                 print("New fidelity is", self.fidelity(self.instructions))
             else:
                 print("Didn't find anything to improve")
-        return applied
+        return self.fidelity(self.instructions) - self.original_fidelity
