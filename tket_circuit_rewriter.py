@@ -36,7 +36,7 @@ class RewriteTket:
         self.noise_channels = noise_channels
         self.target = target
         if target is None:
-            self.target = self.matrix_list_product(self.instructions_to_matrices(self.instructions))
+            self.target = self.matrix_list_product([self.instruction_to_matrix(inst) for inst in self.instructions])
         self.u_basis = get_diracs(self.n_qubits)
         self.state_basis = np.array(self.u_basis)
         self.d2 = 2 ** (2 * self.n_qubits)
@@ -60,7 +60,7 @@ class RewriteTket:
             print("Cleaned circuit up:")
             print(circuit.get_commands())
         self.set_circuit(circuit)
-        self.set_target_unitary(self.matrix_list_product(self.instructions_to_matrices(self.instructions)))
+        self.set_target_unitary(self.matrix_list_product([self.instruction_to_matrix(inst) for inst in self.instructions]))
         if self.verbose:
             print("original fidelity is", self.fidelity(self.instructions))
 
@@ -125,21 +125,22 @@ class RewriteTket:
             c.add_operation(t, inst.op.get_params(), inst.qubits)
         return c
 
-    def instructions_to_matrices(self, instructions):
-        matrices = []
-        for inst in instructions:
-            t = inst.op.get_type()
-            if t in matrices_no_params:
-                matrices.append(matrices_no_params[t](inst.qubits, self.n_qubits))
-            elif t in matrices_with_params:
-                matrices.append(matrices_with_params[t](inst.qubits, self.n_qubits, inst.op.get_params()))
-            else:
-                raise ValueError("Unexpected instruction", inst)
-        return matrices
+    def instruction_to_matrix(self, instruction):
+        t = instruction.op.get_type()
+        if t in matrices_no_params:
+            return matrices_no_params[t](instruction.qubits, self.n_qubits)
+        elif t in matrices_with_params:
+            return matrices_with_params[t](instruction.qubits, self.n_qubits, instruction.op.get_params())
+        else:
+            raise ValueError("Unexpected instruction", instruction)
 
     def get_individual_process_matrix(self, channel):
-        return np.vstack([[np.trace(sum(e @ d2 @ e.transpose().conjugate() for e in channel) @ d1) / (2 ** self.n_qubits) for d1 in self.u_basis]
-                          for d2 in self.u_basis]).transpose()
+        return np.vstack([[np.einsum('ij,ji->', sum(e @ d2 @ e.transpose().conjugate() for e in channel), d1) /
+                           (2 ** self.n_qubits) for d1 in self.u_basis] for d2 in self.u_basis]).transpose()
+
+    def get_unitary_process_matrix(self, unitary):
+        return np.vstack([[np.einsum('ij,ji->', unitary @ d2 @ unitary.transpose().conjugate(), d1) /
+                           (2 ** self.n_qubits) for d1 in self.u_basis] for d2 in self.u_basis]).transpose()
 
     def get_process_matrix(self, instructions):
         m = np.eye(self.d2)
@@ -147,7 +148,7 @@ class RewriteTket:
             if inst.op.get_type() == OpType.CX:
                 m = self.cnot_processes[tuple(inst.qubits)] @ m
             else:
-                m = self.get_individual_process_matrix(self.instructions_to_matrices([inst])) @ m
+                m = self.get_unitary_process_matrix(self.instruction_to_matrix(inst)) @ m
         return m
 
     def fidelity(self, instructions):
