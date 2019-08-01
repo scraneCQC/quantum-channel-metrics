@@ -67,10 +67,7 @@ class RewriteTket:
         return reduce(lambda x, y: x @ y, matrices, np.eye(matrices[0].shape[0]))
 
     def should_remove(self, index, original_fidelity):
-        if index == 0:
-            new_circuit = self.instructions[1:]
-        else:
-            new_circuit = self.instructions[:index] + self.instructions[index+1:]
+        new_circuit = self.instructions[:index] + self.instructions[index+1:]
         new_circuit = self.instructions_to_circuit(new_circuit)
         cleanup.apply(new_circuit)
         new_fidelity = self.fidelity(new_circuit.get_commands())
@@ -88,7 +85,25 @@ class RewriteTket:
             return True
         return False
 
-    def should_commute(self, index):
+    def should_commute(self, index, original_fidelity):
+        gate1 = self.instructions[index]
+        gate2 = self.instructions[index + 1]
+        new_circuit = self.instructions[:index] + [gate2, gate1] + self.instructions[index + 2:]
+        new_circuit = self.instructions_to_circuit(new_circuit)
+        cleanup.apply(new_circuit)
+        new_fidelity = self.fidelity(new_circuit.get_commands())
+        if new_fidelity > original_fidelity:
+            return new_fidelity - original_fidelity, new_circuit, index
+        return (-1, None, None)
+
+    def commute_any(self):
+        original_fidelity = self.fidelity(self.instructions)
+        diffs = [self.should_commute(i, original_fidelity) for i in range(len(self.instructions) - 1)]
+        f, c, i = max(diffs, key=lambda x: x[0])
+        if f > 1e-5:
+            print("Commuting", self.instructions[i], "with", self.instructions[i + 1], "to improve fidelity by", f)
+            self.set_circuit(c)
+            return True
         return False
 
     def should_change_angle(self, index):
@@ -131,6 +146,8 @@ class RewriteTket:
 
     def reduce(self):
         applied = False
-        while self.remove_any():
+        while self.remove_any() or self.commute_any():
             applied = True
+        if self.verbose and not applied:
+            print("Didn't find anything to improve")
         return applied
