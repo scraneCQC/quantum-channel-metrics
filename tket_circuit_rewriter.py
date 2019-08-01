@@ -104,7 +104,7 @@ class RewriteTket:
         new_fidelity = self.fidelity(new_circuit.get_commands())
         if new_fidelity > original_fidelity:
             return new_fidelity - original_fidelity, new_circuit, index
-        return (-1, None, None)
+        return -1, None, None
 
     def commute_any(self):
         if len(self.instructions) < 2:

@@ -32,6 +32,7 @@ def run_multiple_angles(n_qubits, n_angles, s):
     rewriter = RewriteTket(c, standard_noise_channels(0.1, n_qubits), verbose=False)
     for i in range(n_angles):
         circuit = pauli_gadget(i * 2 / n_angles, s, n_qubits)
+        Transform.OptimisePauliGadgets().apply(circuit)
         rewriter.set_circuit_and_target(circuit)
         total = total + rewriter.reduce()
     return total / n_angles
