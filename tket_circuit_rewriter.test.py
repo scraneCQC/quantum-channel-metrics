@@ -29,8 +29,8 @@ def generate_random_circuit(n_qubits, length):
     return c
 
 
-n_qubits = 3
-circuit_length = 10
+n_qubits = 4
+circuit_length = 4
 circuit = generate_random_circuit(n_qubits, circuit_length)
 
 noise = depolarising_channel(2.227e-3, n_qubits)

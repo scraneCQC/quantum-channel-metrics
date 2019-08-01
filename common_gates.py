@@ -30,11 +30,14 @@ def cnot(control: int, target: int, n_qubits: int) -> np.ndarray:
     if control == target:
         raise ValueError("control and target cannot be equal")
     if control < target:
+        return np.array([[int(i^j == (((j >> target) % 2) << control) ) for j in range(2 ** n_qubits)] for i in range(2 ** n_qubits)])
+
         not_target = multi_qubit_matrix(X, target - control, n_qubits - control)
-        gate = block_diag(np.eye(2 ** ()), not_target)
+        gate = block_diag(np.eye(2 ** (n_qubits - control)), not_target)
         return np.kron(np.eye(2 ** control), gate)
     else:
-        pass
+        return np.array([[int(i^j == (((j >> control) % 2) << target) ) for j in range(2 ** n_qubits)] for i in range(2 ** n_qubits)])
+
 
 cnot_key1 = {"cnot" + str(i) + str(i + 1): adjacent_cnot(i, i + 1, 4) for i in range(3)}
 cnot_key2 = {"cnot" + str(i + 1) + str(i): adjacent_cnot(i + 1, i, 4) for i in range(3)}
@@ -72,6 +75,19 @@ def CRz(angle: float, control: int, target: int, n_qubits: int) -> np.ndarray:
         return gate
     else:
         raise NotImplementedError("sorry control must be lower than target")
+
+
+def U3(theta: float, phi, lam, i: int, n_qubits: int) -> np.ndarray:
+    c = math.cos(theta / 2)
+    s = math.sin(theta / 2)
+    e1 = cmath.exp(complex(0, phi))
+    e2 = cmath.exp(complex(0, lam))
+    gate = np.array([[c, -e2 * s], [e1 * s, e1 * e2 * c]])
+    for _ in range(i):
+        gate = np.kron(np.eye(2), gate)
+    for _ in range(n_qubits - i - 1):
+        gate = np.kron(gate, np.eye(2))
+    return gate
 
 
 def phase(angle: float, i: int, n_qubits: int) -> np.ndarray:
