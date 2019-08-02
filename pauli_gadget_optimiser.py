@@ -1,12 +1,12 @@
 from pauli_gadgets import random_pauli_gadget, pauli_gadget
 from tket_circuit_rewriter import RewriteTket
 from pytket import Transform, Circuit
-from noise import standard_noise_channels
+from noise import channels
 from itertools import product
 import random
 
-one_qubit_noise = standard_noise_channels(1.617e-2)
-cnot_noise = standard_noise_channels(1.735e-1, 2)
+one_qubit_noise = channels(0.01, 0.01, 0.01, 1)
+cnot_noise = channels(0.02, 0.02, 0.02, 2)
 
 
 def run(n_qubits):
@@ -39,11 +39,10 @@ def run_multiple_angles(n_qubits, n_angles, s):
         circuit = pauli_gadget(i * 2 / n_angles, s, n_qubits)
         Transform.OptimisePauliGadgets().apply(circuit)
         rewriter.set_circuit_and_target(circuit)
-        total = total + rewriter.reduce()
+        total = total + rewriter.fidelity(rewriter.instructions)
     return total / n_angles
 
 
-n_qubits = 5
-# for s in ["".join(x) for x in product("XYZ", repeat=n_qubits)]:
-#     print(s, run_multiple_angles(n_qubits, 10, s))
-run_multiple(n_qubits, 10)
+n_qubits = 4
+for s in ["".join(x) for x in product("XYZ", repeat=n_qubits)]:
+    print(s, run_multiple_angles(n_qubits, 10, s))

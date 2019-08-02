@@ -33,8 +33,9 @@ class RewriteTket:
         if cleanup.apply(circuit) and self.verbose:
             print("Cleaned circuit up:")
             print(circuit.get_commands())
-        self.set_circuit(circuit)
-        self.noise_channels = noise_channels
+        self.circuit = circuit
+        self.n_qubits = circuit.n_qubits
+        self.instructions = circuit.get_commands()
         self.target = target
         if target is None:
             self.target = self.matrix_list_product([self.instruction_to_unitary(inst) for inst in self.instructions])
@@ -44,11 +45,16 @@ class RewriteTket:
         self.d2 = 2 ** (2 * self.n_qubits)
         self.sigmas = np.array([self.target @ u @ self.target.transpose().conjugate() for u in self.u_basis])
         self.contracted = np.einsum('kij,lji->kl', self.sigmas, self.state_basis, optimize=True)
-        self.noise_process = self.matrix_list_product([self.get_single_qubit_noise_process(c) for c in noise_channels], default_size=4)
-        self.cnot_noise = self.matrix_list_product([self.get_two_qubit_noise_process(c) for c in cnot_noise_channels], default_size=16)
-        self.basic_cnot_processes = {1: self.get_adjacent_cnot_process_matrix(0,1), -1: self.get_adjacent_cnot_process_matrix(1,0)}
-        self.cnot_processes = {(i, j): self.get_cnot_process_matrix(i, j) for i in range(self.n_qubits) for j in range(self.n_qubits) if i != j}
+        self.noise_process = self.matrix_list_product(
+            [self.get_single_qubit_noise_process(c) for c in noise_channels], default_size=4)
+        self.cnot_noise = self.matrix_list_product(
+            [self.get_two_qubit_noise_process(c) for c in cnot_noise_channels], default_size=16)
+        self.basic_cnot_processes = {1: self.get_adjacent_cnot_process_matrix(0,1),
+                                     -1: self.get_adjacent_cnot_process_matrix(1,0)}
+        self.cnot_processes = {(i, j): self.get_cnot_process_matrix(i, j)
+                               for i in range(self.n_qubits) for j in range(self.n_qubits) if i != j}
         self.process_cache = dict()
+        self.original_fidelity = -1
 
     def set_circuit(self, circuit: Circuit):
         self.circuit = circuit
@@ -65,7 +71,8 @@ class RewriteTket:
             print("Cleaned circuit up:")
             print(circuit.get_commands())
         self.set_circuit(circuit)
-        self.set_target_unitary(self.matrix_list_product([self.instruction_to_unitary(inst) for inst in self.instructions]))
+        self.set_target_unitary(self.matrix_list_product(
+            [self.instruction_to_unitary(inst) for inst in self.instructions]))
 
     def matrix_list_product(self, matrices, default_size=None):
         if len(matrices) == 0:
@@ -81,11 +88,12 @@ class RewriteTket:
         new_fidelity = self.fidelity(new_circuit.get_commands())
         if new_fidelity > self.original_fidelity:
             return new_fidelity - self.original_fidelity, new_circuit, index
-        return (-1, -1, index)
+        return -1, -1, index
 
     def remove_any(self):
         if self.n_qubits < 6:
-            diffs = [self.should_remove(i) for i in range(len(self.instructions)) if self.instructions[i].op.get_type() != OpType.CX]
+            diffs = [self.should_remove(i) for i in range(len(self.instructions))
+                     if self.instructions[i].op.get_type() != OpType.CX]
         else:
             diffs = []
             for i in range(len(self.instructions)):
@@ -177,8 +185,8 @@ class RewriteTket:
         m = min(control, target)
         if d > 1:
             g = np.kron(np.eye(4 ** (d - 1)), g)
-            g = np.moveaxis(g.reshape((4, 4) * (d + 1)), [0, d - 1, d + 1, 2 * d], [d - 1, 0, 2 * d, d + 1]).reshape(
-                (4 ** (d + 1), 4 ** (d + 1)))
+            g = np.moveaxis(g.reshape((4, 4) * (d + 1)), [0, d - 1, d + 1, 2 * d], [d - 1, 0, 2 * d, d + 1])\
+                .reshape((4 ** (d + 1), 4 ** (d + 1)))
         return np.kron(np.eye(4 ** m), np.kron(g, np.eye(4 ** (self.n_qubits - 1 - max(control, target)))))
 
     def get_unitary_process_matrix(self, e):
@@ -187,13 +195,13 @@ class RewriteTket:
 
     def get_single_qubit_noise_process(self, noise_channel):
         little_process = np.vstack([[np.einsum('ij,ji->',
-                                               sum([e @ d2 @ e.transpose().conjugate() for e in noise_channel]), d1, optimize=True) / 2
+                            sum([e @ d2 @ e.transpose().conjugate() for e in noise_channel]), d1, optimize=True) / 2
                                      for d1 in one_qubit_diracs] for d2 in one_qubit_diracs]).transpose()
         return little_process
 
     def get_two_qubit_noise_process(self, noise_channel):
         little_process = np.vstack([[np.einsum('ij,ji->',
-                                               sum([e @ d2 @ e.transpose().conjugate() for e in noise_channel]), d1, optimize=True) / 2
+                            sum([e @ d2 @ e.transpose().conjugate() for e in noise_channel]), d1, optimize=True) / 2
                                      for d1 in self.two_qubit_diracs] for d2 in self.two_qubit_diracs]).transpose()
         return little_process
 
@@ -209,8 +217,9 @@ class RewriteTket:
             gate = matrices_with_params[t]([0], 1, instruction.op.get_params())
         else:
             raise ValueError("Unexpected instruction", instruction)
-        little_process = self.noise_process @ np.vstack([[np.einsum('ij,ji->', gate @ d2 @ gate.transpose().conjugate(), d1, optimize=True) / 2
-                                     for d1 in one_qubit_diracs] for d2 in one_qubit_diracs]).transpose()
+        little_process = self.noise_process @ \
+            np.vstack([[np.einsum('ij,ji->', gate @ d2 @ gate.transpose().conjugate(), d1, optimize=True) / 2
+                        for d1 in one_qubit_diracs] for d2 in one_qubit_diracs]).transpose()
         z = np.kron(np.kron(np.eye(4 ** qubit), little_process), np.eye(4 ** (self.n_qubits - qubit - 1)))
         self.process_cache.update({s: z})
         return z

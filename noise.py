@@ -73,3 +73,9 @@ def standard_noise_channels(noise_strength: float, n_qubits: int = 1) -> List[Li
     return [depolarising_channel(noise_strength, n_qubits),
             amplitude_damping_channel(noise_strength, n_qubits),
             phase_damping_channel(noise_strength, n_qubits)]
+
+def channels(depolarizing_strength: float, amplitude_damping_strength: float,
+             phase_damping_strength: float, n_qubits: int) -> List[List[np.ndarray]]:
+    return [depolarising_channel(depolarizing_strength, n_qubits),
+            amplitude_damping_channel(amplitude_damping_strength, n_qubits),
+            phase_damping_channel(phase_damping_strength, n_qubits)]
