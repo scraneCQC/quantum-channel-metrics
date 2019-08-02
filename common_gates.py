@@ -35,10 +35,11 @@ def cnot(control: int, target: int, n_qubits: int) -> np.ndarray:
         g = cnot21
     d = abs(control - target)
     m = min(control, target)
+    ma = max(control, target)
     if d > 1:
         g = np.kron(np.eye(2 ** (d - 1)), g)
         g = np.moveaxis(g.reshape((2,2) * (d + 1)), [0, d - 1, d + 1, 2 * d], [d - 1, 0, 2 * d, d + 1]).reshape((2 ** (d + 1), 2 ** (d + 1)))
-    return np.kron(np.eye(2 ** m), np.kron(g, np.eye(2 ** (n_qubits - 1 - max(control, target)))))
+    return np.kron(np.eye(2 ** m), np.kron(g, np.eye(2 ** (n_qubits - 1 - ma))))
 
 
 cnot_key1 = {"cnot" + str(i) + str(i + 1): adjacent_cnot(i, i + 1, 4) for i in range(3)}

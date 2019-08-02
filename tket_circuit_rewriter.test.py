@@ -1,8 +1,9 @@
 from tket_circuit_rewriter import RewriteTket
 from noise import depolarising_channel
-from pytket import Circuit
+from pytket import Circuit, OpType
 import random
 import numpy as np
+import cmath
 
 
 def generate_random_circuit(n_qubits, length):
@@ -30,22 +31,25 @@ def generate_random_circuit(n_qubits, length):
     return c
 
 
-n_qubits = 2
+n_qubits = 3
 circuit_length = 4
 #circuit = generate_random_circuit(n_qubits, circuit_length)
-circuit = Circuit(2)
-circuit.H(0)
-circuit.X(0)
-circuit.Y(0)
-circuit.Z(0)
+circuit = Circuit(n_qubits)
+circuit.add_operation(OpType.U3, [random.random() * 2 for _ in range(3)], [0])
 
-noise = depolarising_channel(2.227e-3, n_qubits)
+noise = depolarising_channel(2.227e-3)
 
 rewriter = RewriteTket(circuit, [noise], verbose=True)
 np.set_printoptions(edgeitems=10, linewidth=1000)
+old = rewriter.old_cnot_process(0, 2)
+new = rewriter.get_cnot_process_matrix(0, 2)
+print(all([all([cmath.isclose(old[i][j], new[i][j]) for i in range(64)]) for j in range(64)]))
+"""
 for i in range(circuit.n_gates):
     print(circuit.get_commands()[i])
-    print(rewriter.get_single_qubit_process_matrix(circuit.get_commands()[i]))
-    print(rewriter.get_unitary_process_matrix(rewriter.instruction_to_matrix(circuit.get_commands()[i])))
+    z1 = (rewriter.get_single_qubit_gate_process_matrix(circuit.get_commands()[i]))
+    z2 = (rewriter.get_unitary_process_matrix(rewriter.instruction_to_unitary(circuit.get_commands()[i])))
+    print(all([all([cmath.isclose(z1[i][j], z2[i][j])]) for j in range(16)]))
 #rewriter.reduce()
 #print(rewriter.circuit.get_commands())
+"""
