@@ -3,6 +3,7 @@ from common_gates import multi_qubit_matrix, H, Rx, Ry, Rz, U3, cnot, cnot12, cn
 from Pauli import X, Y, Z, get_diracs, one_qubit_diracs
 from functools import reduce
 import numpy as np
+import math
 
 # noinspection PyCallByClass
 cleanup = Transform.sequence([Transform.RebaseToRzRx(),
@@ -67,9 +68,10 @@ class RewriteTket:
         self.contracted = np.einsum('kij,lji->kl', self.sigmas, self.state_basis, optimize=True)
 
     def set_circuit_and_target(self, circuit):
-        if cleanup.apply(circuit) and self.verbose:
-            print("Cleaned circuit up:")
-            print(circuit.get_commands())
+        if cleanup.apply(circuit):
+            if self.verbose:
+                print("Cleaned circuit up:")
+                print(circuit.get_commands())
         self.set_circuit(circuit)
         self.set_target_unitary(self.matrix_list_product(
             [self.instruction_to_unitary(inst) for inst in self.instructions]))
@@ -154,7 +156,7 @@ class RewriteTket:
         if t in matrices_no_params:
             return matrices_no_params[t](instruction.qubits, self.n_qubits)
         elif t in matrices_with_params:
-            return matrices_with_params[t](instruction.qubits, self.n_qubits, instruction.op.get_params())
+            return matrices_with_params[t](instruction.qubits, self.n_qubits, [p * math.pi for p in instruction.op.get_params()])
         else:
             raise ValueError("Unexpected instruction", instruction)
 
@@ -214,7 +216,7 @@ class RewriteTket:
         if t in matrices_no_params:
             gate = matrices_no_params[t]([0], 1)
         elif t in matrices_with_params:
-            gate = matrices_with_params[t]([0], 1, instruction.op.get_params())
+            gate = matrices_with_params[t]([0], 1, [p * math.pi for p in instruction.op.get_params()])
         else:
             raise ValueError("Unexpected instruction", instruction)
         little_process = self.noise_process @ \
@@ -273,4 +275,4 @@ class RewriteTket:
                 print("New fidelity is", self.fidelity(self.instructions))
             else:
                 print("Didn't find anything to improve")
-        return self.fidelity(self.instructions) - self.original_fidelity
+        return self.fidelity(self.instructions)
