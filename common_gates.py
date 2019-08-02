@@ -29,14 +29,16 @@ def adjacent_cnot(i: int, j: int, n_qubits: int) -> np.ndarray:
 def cnot(control: int, target: int, n_qubits: int) -> np.ndarray:
     if control == target:
         raise ValueError("control and target cannot be equal")
-    if control < target:
-        return np.array([[int(i^j == (((j >> target) % 2) << control) ) for j in range(2 ** n_qubits)] for i in range(2 ** n_qubits)])
-
-        not_target = multi_qubit_matrix(X, target - control, n_qubits - control)
-        gate = block_diag(np.eye(2 ** (n_qubits - control)), not_target)
-        return np.kron(np.eye(2 ** control), gate)
+    elif control < target:
+        g = cnot12
     else:
-        return np.array([[int(i^j == (((j >> control) % 2) << target) ) for j in range(2 ** n_qubits)] for i in range(2 ** n_qubits)])
+        g = cnot21
+    d = abs(control - target)
+    m = min(control, target)
+    if d > 1:
+        g = np.kron(np.eye(2 ** (d - 1)), g)
+        g = np.moveaxis(g.reshape((2,2) * (d + 1)), [0, d - 1, d + 1, 2 * d], [d - 1, 0, 2 * d, d + 1]).reshape((2 ** (d + 1), 2 ** (d + 1)))
+    return np.kron(np.eye(2 ** m), np.kron(g, np.eye(2 ** (n_qubits - 1 - max(control, target)))))
 
 
 cnot_key1 = {"cnot" + str(i) + str(i + 1): adjacent_cnot(i, i + 1, 4) for i in range(3)}
