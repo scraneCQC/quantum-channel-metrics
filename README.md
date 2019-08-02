@@ -14,6 +14,8 @@ In `genetic.py` we try to find Clifford+T approximations to a random one-qubit u
 
 In `remove_subcircuits.py` (run from `remove_subcircuits.test.py`), we look for small changes to a circuit that will make it behave more like an ideal unitary than the original circuit would, given the presence of noise.  The same program can synthesize an approximation to a unitary by choosing a random starting point and then improving, but sometimes this goes very badly and I haven't worked out why.  Sometimes it is very good though.
 
+In `tket_circuit_rewriter.py` (run from `tket_circuit_rewriter.test.py`), we see if removing a gate or commuting two adjacent gates would improve the fidelity.  Unlike the above, this one works with tket Circuit objects and runs some Transforms to check for basic improvements first.
+
 ## Next steps
 
 We would use convex optimization to find the sup for diamond distance and S_fidelity, but for now we try a bunch of random states and take the maximum
