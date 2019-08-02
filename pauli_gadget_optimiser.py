@@ -4,18 +4,21 @@ from pytket import Transform, Circuit
 from noise import standard_noise_channels
 from itertools import product
 
+one_qubit_noise = standard_noise_channels(0.01)
+cnot_noise = standard_noise_channels(0.02, 2)
+
 
 def run(n_qubits):
     circuit = random_pauli_gadget(n_qubits)
     Transform.OptimisePauliGadgets().apply(circuit)
-    rewriter = RewriteTket(circuit, standard_noise_channels(0.01), verbose=True)
+    rewriter = RewriteTket(circuit, one_qubit_noise, cnot_noise, verbose=True)
     rewriter.reduce()
     print(rewriter.instructions)
 
 
 def run_multiple(n_qubits, n_iter):
     c = Circuit(n_qubits)
-    rewriter = RewriteTket(c, standard_noise_channels(0.01), verbose=True)
+    rewriter = RewriteTket(c, one_qubit_noise, cnot_noise, verbose=True)
     for _ in range(n_iter):
         circuit = random_pauli_gadget(n_qubits)
         Transform.OptimisePauliGadgets().apply(circuit)
@@ -29,7 +32,7 @@ def run_multiple_angles(n_qubits, n_angles, s):
     # Return average gain in fidelity
     total = 0
     c = Circuit(n_qubits)
-    rewriter = RewriteTket(c, standard_noise_channels(0.1), verbose=False)
+    rewriter = RewriteTket(c, one_qubit_noise, cnot_noise, verbose=False)
     for i in range(n_angles):
         circuit = pauli_gadget(i * 2 / n_angles, s, n_qubits)
         Transform.OptimisePauliGadgets().apply(circuit)

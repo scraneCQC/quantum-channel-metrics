@@ -39,7 +39,7 @@ circuit.add_operation(OpType.U3, [random.random() * 2 for _ in range(3)], [0])
 
 noise = depolarising_channel(2.227e-3)
 
-rewriter = RewriteTket(circuit, [noise], verbose=True)
+rewriter = RewriteTket(circuit, [noise], [], verbose=True)
 np.set_printoptions(edgeitems=10, linewidth=1000)
 old = rewriter.old_cnot_process(0, 2)
 new = rewriter.get_cnot_process_matrix(0, 2)

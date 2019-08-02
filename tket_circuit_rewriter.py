@@ -26,7 +26,7 @@ matrices_with_params = {OpType.Rx: lambda i, n, params: Rx(params[0], i[0], n),
 
 class RewriteTket:
 
-    def __init__(self, circuit: Circuit, noise_channels, target=None, verbose=False):
+    def __init__(self, circuit: Circuit, noise_channels, cnot_noise_channels, target=None, verbose=False):
         self.verbose = verbose
         if cleanup.apply(circuit) and self.verbose:
             print("Cleaned circuit up:")
@@ -42,6 +42,7 @@ class RewriteTket:
         self.d2 = 2 ** (2 * self.n_qubits)
         self.sigmas = np.array([self.target @ u @ self.target.transpose().conjugate() for u in self.u_basis])
         self.noise_process = self.matrix_list_product([self.get_single_qubit_noise_process(c) for c in noise_channels], default_size=4)
+        self.cnot_noise = self.matrix_list_product([self.get_two_qubit_noise_process(c) for c in cnot_noise_channels], default_size=16)
         self.basic_cnot_processes = {1: self.get_adjacent_cnot_process_matrix(0,1), -1: self.get_adjacent_cnot_process_matrix(1,0)}
         self.cnot_processes = {(i, j): self.get_cnot_process_matrix(i, j) for i in range(self.n_qubits) for j in range(self.n_qubits) if i != j}
         self.single_qubit_process_cache = dict()
@@ -180,6 +181,12 @@ class RewriteTket:
         little_process = np.vstack([[np.einsum('ij,ji->',
                                                sum([e @ d2 @ e.transpose().conjugate() for e in noise_channel]), d1) / 2
                                      for d1 in one_qubit_diracs] for d2 in one_qubit_diracs]).transpose()
+        return little_process
+
+    def get_two_qubit_noise_process(self, noise_channel):
+        little_process = np.vstack([[np.einsum('ij,ji->',
+                                               sum([e @ d2 @ e.transpose().conjugate() for e in noise_channel]), d1) / 2
+                                     for d1 in self.two_qubit_diracs] for d2 in self.two_qubit_diracs]).transpose()
         return little_process
 
     def get_single_qubit_gate_process_matrix(self, instruction):
