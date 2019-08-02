@@ -42,8 +42,10 @@ class RewriteTket:
         self.d2 = 2 ** (2 * self.n_qubits)
         self.sigmas = np.array([self.target @ u @ self.target.transpose().conjugate() for u in self.u_basis])
         self.noise_process = self.matrix_list_product([self.get_single_qubit_noise_process(c) for c in noise_channels], default_size=4)
+        self.qubit_noises = [np.kron(np.kron(np.eye(4 ** i), self.noise_process),np.eye(4 ** (self.n_qubits - i - 1))) for i in range(self.n_qubits)]
         self.basic_cnot_processes = {1: self.get_adjacent_cnot_process_matrix(0,1), -1: self.get_adjacent_cnot_process_matrix(1,0)}
         self.cnot_processes = {(i, j): self.get_cnot_process_matrix(i, j) for i in range(self.n_qubits) for j in range(self.n_qubits) if i != j}
+        self.single_qubit_process_cache = dict()
         self.original_fidelity = self.fidelity(self.instructions)
         if self.verbose:
             print("original fidelity is", self.original_fidelity)
@@ -52,6 +54,7 @@ class RewriteTket:
         self.circuit = circuit
         self.n_qubits = circuit.n_qubits
         self.instructions = circuit.get_commands()
+        self.single_qubit_process_cache = dict()
 
     def set_target_unitary(self, target: np.ndarray):
         self.target = target
@@ -181,6 +184,9 @@ class RewriteTket:
         return little_process
 
     def get_single_qubit_gate_process_matrix(self, instruction):
+        s = str(instruction)
+        if s in self.single_qubit_process_cache:
+            return self.single_qubit_process_cache[s]
         t = instruction.op.get_type()
         qubit = instruction.qubits[0]
         if t in matrices_no_params:
@@ -191,18 +197,17 @@ class RewriteTket:
             raise ValueError("Unexpected instruction", instruction)
         little_process = np.vstack([[np.einsum('ij,ji->', gate @ d2 @ gate.transpose().conjugate(), d1) / 2
                                      for d1 in one_qubit_diracs] for d2 in one_qubit_diracs]).transpose()
-        z = np.kron(np.kron(np.eye(4 ** qubit), little_process), np.eye(4 ** (self.n_qubits - qubit - 1)))
+        z = self.qubit_noises[instruction.qubits[0]] @ np.kron(np.kron(np.eye(4 ** qubit), little_process), np.eye(4 ** (self.n_qubits - qubit - 1)))
+        self.single_qubit_process_cache.update({s: z})
         return z
 
     def get_circuit_process_matrix(self, instructions):
         m = np.eye(self.d2)
         for inst in instructions:
             if inst.op.get_type() == OpType.CX:
-                m = m @ self.cnot_processes[tuple(inst.qubits)]  # TODO: noise
+                m = m @ self.cnot_processes[tuple(inst.qubits)]
             else:
-                z = np.kron(np.kron(np.eye(4 ** inst.qubits[0]), self.noise_process),
-                            np.eye(4 ** (self.n_qubits - inst.qubits[0] - 1)))
-                m = m @ self.get_single_qubit_gate_process_matrix(inst) @ z
+                m = m @ self.get_single_qubit_gate_process_matrix(inst)
         return m
 
     def fidelity(self, instructions):
