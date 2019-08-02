@@ -42,7 +42,6 @@ class RewriteTket:
         self.d2 = 2 ** (2 * self.n_qubits)
         self.sigmas = np.array([self.target @ u @ self.target.transpose().conjugate() for u in self.u_basis])
         self.noise_process = self.matrix_list_product([self.get_single_qubit_noise_process(c) for c in noise_channels], default_size=4)
-        self.qubit_noises = [np.kron(np.kron(np.eye(4 ** i), self.noise_process),np.eye(4 ** (self.n_qubits - i - 1))) for i in range(self.n_qubits)]
         self.basic_cnot_processes = {1: self.get_adjacent_cnot_process_matrix(0,1), -1: self.get_adjacent_cnot_process_matrix(1,0)}
         self.cnot_processes = {(i, j): self.get_cnot_process_matrix(i, j) for i in range(self.n_qubits) for j in range(self.n_qubits) if i != j}
         self.single_qubit_process_cache = dict()
@@ -195,9 +194,9 @@ class RewriteTket:
             gate = matrices_with_params[t]([0], 1, instruction.op.get_params())
         else:
             raise ValueError("Unexpected instruction", instruction)
-        little_process = np.vstack([[np.einsum('ij,ji->', gate @ d2 @ gate.transpose().conjugate(), d1) / 2
+        little_process = self.noise_process @ np.vstack([[np.einsum('ij,ji->', gate @ d2 @ gate.transpose().conjugate(), d1) / 2
                                      for d1 in one_qubit_diracs] for d2 in one_qubit_diracs]).transpose()
-        z = self.qubit_noises[instruction.qubits[0]] @ np.kron(np.kron(np.eye(4 ** qubit), little_process), np.eye(4 ** (self.n_qubits - qubit - 1)))
+        z = np.kron(np.kron(np.eye(4 ** qubit), little_process), np.eye(4 ** (self.n_qubits - qubit - 1)))
         self.single_qubit_process_cache.update({s: z})
         return z
 
