@@ -9,7 +9,9 @@ cleanup = Transform.sequence([Transform.RebaseToRzRx(),
                               Transform.repeat(Transform.sequence([
                                   Transform.RemoveRedundancies(),
                                   Transform.ReduceSingles(),
-                                  Transform.CommuteRzRxThroughCX()]))])
+                                  Transform.CommuteRzRxThroughCX()])),
+                              Transform.OptimisePauliGadgets(),
+                              Transform.ReduceSingles()])
 
 matrices_no_params = {OpType.Z: lambda i, n: multi_qubit_matrix(Z, i[0], n),
                       OpType.X: lambda i, n: multi_qubit_matrix(X, i[0], n),
@@ -41,24 +43,22 @@ class RewriteTket:
         self.state_basis = np.array(self.u_basis)
         self.d2 = 2 ** (2 * self.n_qubits)
         self.sigmas = np.array([self.target @ u @ self.target.transpose().conjugate() for u in self.u_basis])
+        self.contracted = np.einsum('kij,lji->kl', self.sigmas, self.state_basis, optimize=True)
         self.noise_process = self.matrix_list_product([self.get_single_qubit_noise_process(c) for c in noise_channels], default_size=4)
         self.cnot_noise = self.matrix_list_product([self.get_two_qubit_noise_process(c) for c in cnot_noise_channels], default_size=16)
         self.basic_cnot_processes = {1: self.get_adjacent_cnot_process_matrix(0,1), -1: self.get_adjacent_cnot_process_matrix(1,0)}
         self.cnot_processes = {(i, j): self.get_cnot_process_matrix(i, j) for i in range(self.n_qubits) for j in range(self.n_qubits) if i != j}
         self.process_cache = dict()
-        self.original_fidelity = self.fidelity(self.instructions)
-        if self.verbose:
-            print("original fidelity is", self.original_fidelity)
 
     def set_circuit(self, circuit: Circuit):
         self.circuit = circuit
         self.n_qubits = circuit.n_qubits
         self.instructions = circuit.get_commands()
-        self.process_cache = dict()
 
     def set_target_unitary(self, target: np.ndarray):
         self.target = target
         self.sigmas = np.array([self.target @ u @ self.target.transpose().conjugate() for u in self.u_basis])
+        self.contracted = np.einsum('kij,lji->kl', self.sigmas, self.state_basis, optimize=True)
 
     def set_circuit_and_target(self, circuit):
         if cleanup.apply(circuit) and self.verbose:
@@ -66,9 +66,6 @@ class RewriteTket:
             print(circuit.get_commands())
         self.set_circuit(circuit)
         self.set_target_unitary(self.matrix_list_product([self.instruction_to_unitary(inst) for inst in self.instructions]))
-        self.original_fidelity = self.fidelity(self.instructions)
-        if self.verbose:
-            print("original fidelity is", self.original_fidelity)
 
     def matrix_list_product(self, matrices, default_size=None):
         if len(matrices) == 0:
@@ -77,18 +74,23 @@ class RewriteTket:
             return np.eye(default_size)
         return reduce(lambda x, y: x @ y, matrices, np.eye(matrices[0].shape[0]))
 
-    def should_remove(self, index, original_fidelity):
+    def should_remove(self, index):
         new_circuit = self.instructions[:index] + self.instructions[index+1:]
         new_circuit = self.instructions_to_circuit(new_circuit)
         cleanup.apply(new_circuit)
         new_fidelity = self.fidelity(new_circuit.get_commands())
-        if new_fidelity > original_fidelity:
-            return new_fidelity - original_fidelity, new_circuit, index
+        if new_fidelity > self.original_fidelity:
+            return new_fidelity - self.original_fidelity, new_circuit, index
         return (-1, -1, index)
 
     def remove_any(self):
-        original_fidelity = self.fidelity(self.instructions)
-        diffs = [self.should_remove(i, original_fidelity) for i in range(len(self.instructions)) if self.instructions[i].op.get_type() != OpType.CX]
+        if self.n_qubits < 6:
+            diffs = [self.should_remove(i) for i in range(len(self.instructions)) if self.instructions[i].op.get_type() != OpType.CX]
+        else:
+            diffs = []
+            for i in range(len(self.instructions)):
+                if self.instructions[i].op.get_type() != OpType.CX:
+                    diffs.append(self.should_remove(i))
         if len(diffs) == 0:
             return False
         f, c, i = max(diffs, key=lambda x: x[0])
@@ -96,30 +98,36 @@ class RewriteTket:
             if self.verbose:
                 print("Removing", self.instructions[i], "to improve fidelity by", f)
             self.set_circuit(c)
+            self.original_fidelity = self.original_fidelity + f
             return True
         return False
 
-    def should_commute(self, index, original_fidelity):
+    def should_commute(self, index):
         gate1 = self.instructions[index]
         gate2 = self.instructions[index + 1]
         new_circuit = self.instructions[:index] + [gate2, gate1] + self.instructions[index + 2:]
         new_circuit = self.instructions_to_circuit(new_circuit)
         cleanup.apply(new_circuit)
         new_fidelity = self.fidelity(new_circuit.get_commands())
-        if new_fidelity > original_fidelity:
-            return new_fidelity - original_fidelity, new_circuit, index
+        if new_fidelity > self.original_fidelity:
+            return new_fidelity - self.original_fidelity, new_circuit, index
         return -1, None, None
 
     def commute_any(self):
         if len(self.instructions) < 2:
             return False
-        original_fidelity = self.fidelity(self.instructions)
-        diffs = [self.should_commute(i, original_fidelity) for i in range(len(self.instructions) - 1)]
+        if self.n_qubits < 6:
+            diffs = [self.should_commute(i) for i in range(len(self.instructions) - 1)]
+        else:
+            diffs = []
+            for i in range(len(self.instructions) - 1):
+                diffs. append((self.should_commute(i)))
         f, c, i = max(diffs, key=lambda x: x[0])
         if f > 1e-5:
             if self.verbose:
                 print("Commuting", self.instructions[i], "with", self.instructions[i + 1], "to improve fidelity by", f)
             self.set_circuit(c)
+            self.original_fidelity = self.original_fidelity + f
             return True
         return False
 
@@ -149,7 +157,7 @@ class RewriteTket:
             c = cnot21
         else:
             raise ValueError("Please use get_cnot_process_matrix instead", control, target)
-        little_process = np.vstack([[np.einsum('ij,ji->', c @ d2 @ c, d1) / 4
+        little_process = np.vstack([[np.einsum('ij,ji->', c @ d2 @ c, d1, optimize=True) / 4
                            for d1 in self.two_qubit_diracs] for d2 in self.two_qubit_diracs]).transpose()
         return little_process
 
@@ -174,18 +182,18 @@ class RewriteTket:
         return np.kron(np.eye(4 ** m), np.kron(g, np.eye(4 ** (self.n_qubits - 1 - max(control, target)))))
 
     def get_unitary_process_matrix(self, e):
-        return np.vstack([[np.einsum('ij,ji->', e @ d2 @ e.transpose().conjugate(), d1) /
+        return np.vstack([[np.einsum('ij,ji->', e @ d2 @ e.transpose().conjugate(), d1, optimize=True) /
                            (2 ** self.n_qubits) for d1 in self.u_basis] for d2 in self.u_basis]).transpose()
 
     def get_single_qubit_noise_process(self, noise_channel):
         little_process = np.vstack([[np.einsum('ij,ji->',
-                                               sum([e @ d2 @ e.transpose().conjugate() for e in noise_channel]), d1) / 2
+                                               sum([e @ d2 @ e.transpose().conjugate() for e in noise_channel]), d1, optimize=True) / 2
                                      for d1 in one_qubit_diracs] for d2 in one_qubit_diracs]).transpose()
         return little_process
 
     def get_two_qubit_noise_process(self, noise_channel):
         little_process = np.vstack([[np.einsum('ij,ji->',
-                                               sum([e @ d2 @ e.transpose().conjugate() for e in noise_channel]), d1) / 2
+                                               sum([e @ d2 @ e.transpose().conjugate() for e in noise_channel]), d1, optimize=True) / 2
                                      for d1 in self.two_qubit_diracs] for d2 in self.two_qubit_diracs]).transpose()
         return little_process
 
@@ -201,36 +209,53 @@ class RewriteTket:
             gate = matrices_with_params[t]([0], 1, instruction.op.get_params())
         else:
             raise ValueError("Unexpected instruction", instruction)
-        little_process = self.noise_process @ np.vstack([[np.einsum('ij,ji->', gate @ d2 @ gate.transpose().conjugate(), d1) / 2
+        little_process = self.noise_process @ np.vstack([[np.einsum('ij,ji->', gate @ d2 @ gate.transpose().conjugate(), d1, optimize=True) / 2
                                      for d1 in one_qubit_diracs] for d2 in one_qubit_diracs]).transpose()
         z = np.kron(np.kron(np.eye(4 ** qubit), little_process), np.eye(4 ** (self.n_qubits - qubit - 1)))
         self.process_cache.update({s: z})
         return z
 
     def get_circuit_process_matrix(self, instructions):
-        if "".join([str(inst) for inst in instructions]) in self.process_cache:
-            return self.process_cache["".join(instructions)]
+        s = "".join([str(inst) for inst in instructions])
+        if s in self.process_cache:
+            return self.process_cache[s]
         l = len(instructions)
         for i in range(len(instructions)):
             end = "".join([str(inst) for inst in instructions[i:]])
             if end in self.process_cache:
-                return self.get_circuit_process_matrix(instructions[:i]) @ self.process_cache[end]
+                m = self.get_circuit_process_matrix(instructions[:i]) @ self.process_cache[end]
+                if l < 5:
+                    self.process_cache.update({s: m})
+                return m
             beginning = "".join([str(inst) for inst in instructions[:(l - i)]])
             if beginning in self.process_cache:
-                return self.process_cache[beginning] @ self.get_circuit_process_matrix(instructions[(l - i):])
+                m = self.process_cache[beginning] @ self.get_circuit_process_matrix(instructions[(l - i):])
+                if l < 5:
+                    self.process_cache.update({s: m})
+                return m
         m = np.eye(self.d2)
         for inst in instructions:
             if inst.op.get_type() == OpType.CX:
                 m = m @ self.cnot_processes[tuple(inst.qubits)]
             else:
                 m = m @ self.get_single_qubit_gate_process_matrix(inst)
+        if l < 5:
+            self.process_cache.update({s: m})
         return m
 
     def fidelity(self, instructions):
-        s = np.einsum('kij,lk,lji->', self.sigmas, self.get_circuit_process_matrix(instructions), self.state_basis, optimize=True).real
+        s = np.einsum('kl,lk->', self.contracted, self.get_circuit_process_matrix(instructions), optimize=True).real
         return 2 ** (-3 * self.n_qubits) * s
 
     def reduce(self):
+        if self.n_qubits < 6:
+            for i in range(1, len(self.instructions) + 1):
+                for s in {0, len(self.instructions) - i}:
+                    self.process_cache.update({"".join([str(inst) for inst in self.instructions[s: s + i]]):
+                                               self.get_circuit_process_matrix(self.instructions[s: s + i])})
+        self.original_fidelity = self.fidelity(self.instructions)
+        if self.verbose:
+            print("original fidelity is", self.original_fidelity)
         applied = False
         while self.remove_any() or self.commute_any():
             applied = True
