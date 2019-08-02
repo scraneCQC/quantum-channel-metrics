@@ -44,4 +44,4 @@ def run_multiple_angles(n_qubits, n_angles, s):
 n_qubits = 5
 # for s in ["".join(x) for x in product("XYZ", repeat=n_qubits)]:
 #     print(s, run_multiple_angles(n_qubits, 10, s))
-run_multiple(n_qubits, 10)
+run(n_qubits)
