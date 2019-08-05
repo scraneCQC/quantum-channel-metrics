@@ -171,8 +171,6 @@ class RewriteTket:
             self.set_circuit(c)
             self.original_fidelity = self.original_fidelity + f
             return True
-        cleanup.apply(self.circuit)
-        self.set_circuit(self.circuit)
         return False
 
 
@@ -208,13 +206,14 @@ class RewriteTket:
             raise ValueError("Control and target must be different")
         if target in [control - 1, control + 1]:
             p = np.kron(np.eye(4 ** min(control, target)),
-                           np.kron(self.get_adjacent_cnot_process_matrix(control, target),
+                           np.kron(self.cnot_noise @ self.get_adjacent_cnot_process_matrix(control, target),
                                    np.eye(4 ** (self.n_qubits - 1 - max(control, target)))))
             return p
         if target > control:
             g = self.basic_cnot_processes[1]
         else:
             g = self.basic_cnot_processes[-1]
+        g = self.cnot_noise @ g
         d = abs(control - target)
         m = min(control, target)
         if d > 1:
@@ -235,7 +234,7 @@ class RewriteTket:
 
     def get_two_qubit_noise_process(self, noise_channel):
         little_process = np.vstack([[np.einsum('ij,ji->',
-                            sum([e @ d2 @ e.transpose().conjugate() for e in noise_channel]), d1, optimize=True) / 2
+                            sum([e @ d2 @ e.transpose().conjugate() for e in noise_channel]), d1, optimize=True) / 4
                                      for d1 in self.two_qubit_diracs] for d2 in self.two_qubit_diracs]).transpose()
         return little_process
 
@@ -309,4 +308,7 @@ class RewriteTket:
                 print("New fidelity is", self.fidelity(self.instructions))
             else:
                 print("Didn't find anything to improve")
+        if not applied:
+            cleanup.apply(self.circuit)
+            self.set_circuit(self.circuit)
         return self.fidelity(self.instructions)

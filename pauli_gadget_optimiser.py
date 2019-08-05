@@ -101,8 +101,8 @@ def get_opt_fid(s: str, angle: float, rewriter: RewriteTket):
 
 
 def plot_angles(s):
-    noise1 = channels(1.617e-2, 1.617e-2, 1.617e-2, 1)
-    noise2 = channels(1.735e-1, 1.735e-1, 1.735e-1, 2)
+    noise1 = []
+    noise2 = [depolarising_channel(0.01, 2)]
     rewriter = RewriteTket(Circuit(len(s)), noise1, noise2, verbose=False)
     angles = [2 * i / 100 for i in range(101)]
     fidelities = [get_fid(s, a, rewriter) for a in angles]
@@ -112,11 +112,11 @@ def plot_angles(s):
     line_reduced, = plt.plot(angles, opt_fidelities)
     plt.xlabel("alpha (multiples of pi)")
     plt.ylabel("fidelity of " + s + " gadget")
-    plt.legend((line_orig, line_reduced), ("original", "optimized"), loc="best", bbox_to_anchor=(0.25, 0.5, 0.5, 0.5))
+    plt.legend((line_orig, line_reduced), ("original", "optimized"), loc="upper center")
     plt.savefig("graphs/gadget_" + s + "_varied_angle.png")
     plt.close()
 
 
 np.set_printoptions(edgeitems=10, linewidth=1000)
 
-plot_angles("XYZ")
+plot_angles("XXX")
