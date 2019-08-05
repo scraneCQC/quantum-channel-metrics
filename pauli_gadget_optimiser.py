@@ -1,10 +1,11 @@
 from pauli_gadgets import random_pauli_gadget, pauli_gadget
-from tket_circuit_rewriter import RewriteTket
+from tket_circuit_rewriter import RewriteTket, cleanup
 from pytket import Transform, Circuit
 from noise import channels, depolarising_channel, amplitude_damping_channel, phase_damping_channel
 from itertools import product
 import random
 import math
+import numpy as np
 import matplotlib.pyplot as plt
 
 one_qubit_noise = channels(0.01, 0.01, 0.01, 1)
@@ -15,8 +16,12 @@ def run(n_qubits):
     circuit = random_pauli_gadget(n_qubits)
     Transform.OptimisePauliGadgets().apply(circuit)
     rewriter = RewriteTket(circuit, one_qubit_noise, cnot_noise, verbose=True)
+    print(rewriter.target)
     rewriter.reduce()
-    print(rewriter.instructions)
+    Transform.ReduceSingles().apply(circuit)
+    print(rewriter.circuit.get_commands())
+    rewriter.set_circuit(circuit)
+    rewriter.reduce()
 
 
 def run_multiple(n_qubits, n_iter):
@@ -91,7 +96,7 @@ def get_opt_fid(s: str, angle: float, rewriter: RewriteTket):
 def plot_angles(s):
     noise1 = channels(1.617e-2, 1.617e-2, 1.617e-2, 1)
     noise2 = channels(1.735e-1, 1.735e-1, 1.735e-1, 2)
-    rewriter = RewriteTket(Circuit(len(s)), noise1, noise2)
+    rewriter = RewriteTket(Circuit(len(s)), noise1, noise2, verbose=False)
     angles = [2 * i / 100 for i in range(101)]
     fidelities = [get_fid(s, a, rewriter) for a in angles]
     opt_fidelities = [get_opt_fid(s, a, rewriter) for a in angles]
@@ -105,5 +110,7 @@ def plot_angles(s):
     plt.close()
 
 
-plot_angles("XXX")
+np.set_printoptions(edgeitems=10, linewidth=1000)
+
+plot_angles("XYZ")
 

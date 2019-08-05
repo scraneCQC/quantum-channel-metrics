@@ -54,9 +54,7 @@ def get_cnot_key(n_qubits):
 
 
 def Rz(angle: float, i: int, n_qubits: int) -> np.ndarray:
-    c = math.cos(angle / 2)
-    s = math.sin(angle / 2)
-    gate = np.array([[complex(c, -s), 0], [0, complex(c, s)]])
+    gate = np.array([[cmath.exp(complex(0, - angle / 2)), 0], [0, cmath.exp(complex(0, angle / 2))]])
     for _ in range(i):
         gate = np.kron(np.eye(2), gate)
     for _ in range(n_qubits - i - 1):
@@ -80,12 +78,19 @@ def CRz(angle: float, control: int, target: int, n_qubits: int) -> np.ndarray:
         raise NotImplementedError("sorry control must be lower than target")
 
 
+def U1(theta: float, i: int, n_qubits: int) -> np.ndarray:
+    gate = np.array([[1, 0], [0, cmath.exp(complex(0, theta))]])
+    return multi_qubit_matrix(gate, i, n_qubits)
+
+
 def U3(theta: float, phi, lam, i: int, n_qubits: int) -> np.ndarray:
     c = math.cos(theta / 2)
     s = math.sin(theta / 2)
     e1 = cmath.exp(complex(0, phi))
     e2 = cmath.exp(complex(0, lam))
     gate = np.array([[c, -e2 * s], [e1 * s, e1 * e2 * c]])
+    return multi_qubit_matrix(gate, i, n_qubits)
+    #gate = Rz(phi, 0, 1) @ Ry(theta, 0, 1) @ Rz(lam, 0, 1)
     for _ in range(i):
         gate = np.kron(np.eye(2), gate)
     for _ in range(n_qubits - i - 1):
@@ -135,11 +140,7 @@ def Rx(angle: float, i: int, n_qubits: int) -> np.ndarray:
     c = math.cos(angle / 2)
     s = math.sin(angle / 2)
     gate = np.array([[c, complex(0, -s)], [complex(0, -s), c]])
-    for _ in range(i):
-        gate = np.kron(np.eye(2), gate)
-    for _ in range(n_qubits - i - 1):
-        gate = np.kron(gate, np.eye(2))
-    return gate
+    return multi_qubit_matrix(gate, i, n_qubits)
 
 
 def get_Rx_key(angle: float, n_qubits: int) -> Dict[str, np.ndarray]:

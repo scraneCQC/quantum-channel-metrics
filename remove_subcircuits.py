@@ -24,6 +24,7 @@ class SubcircuitRemover:
         self.d2 = 2 ** (2 * self.n_qubits)
         self.U = reduce(lambda x, y: x @ y, [self.key[s] for s in self.circuit], np.eye(2 ** self.n_qubits))
         self.sigmas = np.array([self.U @ u @ self.U.transpose().conjugate() for u in self.u_basis])
+        self.contracted = np.einsum('kij,lji->kl', self.sigmas, self.state_basis, optimize=True)
         if True:
             self.runner = CachingRunner(circuit_key, n_qubits, noise_channels)
             self.runner.remember(self.circuit)
@@ -44,6 +45,7 @@ class SubcircuitRemover:
     def set_target_unitary(self, unitary):
         self.U = unitary
         self.sigmas = np.array([self.U @ u @ self.U.transpose().conjugate() for u in self.u_basis])
+        self.contracted = np.einsum('kij,lji->kl', self.sigmas, self.state_basis, optimize=True)
 
     def should_remove_subcircuit(self, start: int, end: int, original_fid: float) -> bool:
         remove_fid = self.fidelity(self.circuit[:start] + self.circuit[end:])
@@ -150,7 +152,7 @@ class SubcircuitRemover:
         return self.circuit
 
     def fidelity(self, circuit_string: Iterable) -> float:
-        s = np.einsum('kij,lk,lji->', self.sigmas, self.runner.get_matrix(circuit_string), self.state_basis, optimize=True).real
+        s = np.einsum('kl,lk->', self.contracted, self.runner.get_matrix(circuit_string), optimize=True).real
         return 2 ** (-3 * self.n_qubits) * s
 
     @property

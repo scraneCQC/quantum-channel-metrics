@@ -1,5 +1,5 @@
 from pytket import Circuit, Transform, OpType
-from common_gates import multi_qubit_matrix, H, Rx, Ry, Rz, U3, cnot, cnot12, cnot21
+from common_gates import multi_qubit_matrix, H, Rx, Ry, Rz, U1, U3, cnot, cnot12, cnot21, S, V
 from Pauli import X, Y, Z, get_diracs, one_qubit_diracs
 from functools import reduce
 import numpy as np
@@ -12,18 +12,21 @@ cleanup = Transform.sequence([Transform.RebaseToRzRx(),
                                   Transform.ReduceSingles(),
                                   Transform.CommuteRzRxThroughCX()])),
                               Transform.OptimisePauliGadgets(),
-                              Transform.ReduceSingles()])
+                              Transform.ReduceSingles(),
+                              Transform.RebaseToRzRx()])
 
 matrices_no_params = {OpType.Z: lambda i, n: multi_qubit_matrix(Z, i[0], n),
                       OpType.X: lambda i, n: multi_qubit_matrix(X, i[0], n),
                       OpType.Y: lambda i, n: multi_qubit_matrix(Y, i[0], n),
                       OpType.H: lambda i, n: multi_qubit_matrix(H, i[0], n),
+                      OpType.S: lambda i, n: multi_qubit_matrix(S, i[0], n),
+                      OpType.V: lambda i, n: multi_qubit_matrix(V, i[0], n),
                       OpType.CX: lambda i, n: cnot(i[0], i[1], n)}
 
 matrices_with_params = {OpType.Rx: lambda i, n, params: Rx(params[0], i[0], n),
                         OpType.Ry: lambda i, n, params: Ry(params[0], i[0], n),
                         OpType.Rz: lambda i, n, params: Rz(params[0], i[0], n),
-                        OpType.U1: lambda i, n, params: Rz(params[0], i[0], n),
+                        OpType.U1: lambda i, n, params: U1(params[0], i[0], n),
                         OpType.U3: lambda i, n, params: U3(params[0], params[1], params[2], i[0], n)}
 
 
@@ -39,7 +42,7 @@ class RewriteTket:
         self.instructions = circuit.get_commands()
         self.target = target
         if target is None:
-            self.target = self.matrix_list_product([self.instruction_to_unitary(inst) for inst in self.instructions])
+            self.target = self.matrix_list_product([self.instruction_to_unitary(inst) for inst in self.instructions[::-1]])
         self.two_qubit_diracs = get_diracs(2)
         self.u_basis = get_diracs(self.n_qubits)
         self.state_basis = np.array(self.u_basis)
@@ -74,7 +77,7 @@ class RewriteTket:
                 print(circuit.get_commands())
         self.set_circuit(circuit)
         self.set_target_unitary(self.matrix_list_product(
-            [self.instruction_to_unitary(inst) for inst in self.instructions]))
+            [self.instruction_to_unitary(inst) for inst in self.instructions[::-1]]))
 
     def matrix_list_product(self, matrices, default_size=None):
         if len(matrices) == 0:
@@ -142,7 +145,41 @@ class RewriteTket:
         return False
 
     def should_change_angle(self, index):
+        inst = self.instructions[index]
+        if inst.op.get_type() in matrices_with_params:
+        #if inst.op.get_type() == OpType.U1:
+            params = inst.op.get_params()
+            for i in range(len(params)):
+                if params[i] not in [0, 0.5, 1, 1.5]:
+                    new_params = list(params)
+                    new_params[i] = round(params[i] * 2) / 2
+                    new_circuit = self.instructions_to_circuit(self.instructions[:index])
+                    new_circuit.add_operation(inst.op.get_type(), new_params, inst.qubits)
+                    new_circuit.add_circuit(self.instructions_to_circuit(self.instructions[index + 1:]), list(range(self.n_qubits)))
+                    cleanup.apply(new_circuit)
+                    new_fidelity = self.fidelity(new_circuit.get_commands())
+                    if new_fidelity > self.original_fidelity:
+                        return new_fidelity - self.original_fidelity, new_circuit, index, new_params
+        return -1, None, None, None
+
+    def change_any_angle(self):
+        if self.n_qubits < 6:
+            diffs = [self.should_change_angle(i) for i in range(len(self.instructions))]
+        else:
+            diffs = []
+            for i in range(len(self.instructions) - 1):
+                diffs. append((self.should_commute(i)))
+        if len(diffs) == 0:
+            return False
+        f, c, i, p = max(diffs, key=lambda x: x[0])
+        if f > 1e-5:
+            if self.verbose:
+                print("Changing angle of", self.instructions[i], "to", p , "to improve fidelity by", f)
+            self.set_circuit(c)
+            self.original_fidelity = self.original_fidelity + f
+            return True
         return False
+
 
     def instructions_to_circuit(self, instructions):
         c = Circuit(self.n_qubits)
@@ -234,22 +271,22 @@ class RewriteTket:
         for i in range(len(instructions)):
             end = "".join([str(inst) for inst in instructions[i:]])
             if end in self.process_cache:
-                m = self.get_circuit_process_matrix(instructions[:i]) @ self.process_cache[end]
+                m = self.process_cache[end] @ self.get_circuit_process_matrix(instructions[:i])
                 if l < 5:
                     self.process_cache.update({s: m})
                 return m
             beginning = "".join([str(inst) for inst in instructions[:(l - i)]])
             if beginning in self.process_cache:
-                m = self.process_cache[beginning] @ self.get_circuit_process_matrix(instructions[(l - i):])
+                m = self.get_circuit_process_matrix(instructions[(l - i):]) @ self.process_cache[beginning]
                 if l < 5:
                     self.process_cache.update({s: m})
                 return m
         m = np.eye(self.d2)
         for inst in instructions:
             if inst.op.get_type() == OpType.CX:
-                m = m @ self.cnot_processes[tuple(inst.qubits)]
+                m = self.cnot_processes[tuple(inst.qubits)] @ m
             else:
-                m = m @ self.get_single_qubit_gate_process_matrix(inst)
+                m = self.get_single_qubit_gate_process_matrix(inst) @ m
         if l < 5:
             self.process_cache.update({s: m})
         return m
@@ -268,7 +305,7 @@ class RewriteTket:
         if self.verbose:
             print("original fidelity is", self.original_fidelity)
         applied = False
-        while self.remove_any() or self.commute_any():
+        while self.change_any_angle():  # or self.remove_any() or self.commute_any():
             applied = True
         if self.verbose:
             if applied:
