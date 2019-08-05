@@ -6,14 +6,14 @@ import numpy as np
 import math
 
 # noinspection PyCallByClass
-cleanup = Transform.sequence([Transform.RebaseToRzRx(),
+cleanup = Transform.sequence([
                               Transform.repeat(Transform.sequence([
                                   Transform.RemoveRedundancies(),
                                   Transform.ReduceSingles(),
                                   Transform.CommuteRzRxThroughCX()])),
                               Transform.OptimisePauliGadgets(),
-                              Transform.ReduceSingles(),
-                              Transform.RebaseToRzRx()])
+                              Transform.ReduceSingles()])
+
 
 matrices_no_params = {OpType.Z: lambda i, n: multi_qubit_matrix(Z, i[0], n),
                       OpType.X: lambda i, n: multi_qubit_matrix(X, i[0], n),
@@ -34,9 +34,6 @@ class RewriteTket:
 
     def __init__(self, circuit: Circuit, noise_channels, cnot_noise_channels, target=None, verbose=False):
         self.verbose = verbose
-        if cleanup.apply(circuit) and self.verbose:
-            print("Cleaned circuit up:")
-            print(circuit.get_commands())
         self.circuit = circuit
         self.n_qubits = circuit.n_qubits
         self.instructions = circuit.get_commands()
@@ -71,10 +68,6 @@ class RewriteTket:
         self.contracted = np.einsum('kij,lji->kl', self.sigmas, self.state_basis, optimize=True)
 
     def set_circuit_and_target(self, circuit):
-        if cleanup.apply(circuit):
-            if self.verbose:
-                print("Cleaned circuit up:")
-                print(circuit.get_commands())
         self.set_circuit(circuit)
         self.set_target_unitary(self.matrix_list_product(
             [self.instruction_to_unitary(inst) for inst in self.instructions[::-1]]))
@@ -178,6 +171,8 @@ class RewriteTket:
             self.set_circuit(c)
             self.original_fidelity = self.original_fidelity + f
             return True
+        cleanup.apply(self.circuit)
+        self.set_circuit(self.circuit)
         return False
 
 
@@ -301,7 +296,9 @@ class RewriteTket:
                 for s in {0, len(self.instructions) - i}:
                     self.process_cache.update({"".join([str(inst) for inst in self.instructions[s: s + i]]):
                                                self.get_circuit_process_matrix(self.instructions[s: s + i])})
-        self.original_fidelity = self.fidelity(self.instructions)
+        c = self.circuit.copy()
+        cleanup.apply(c)
+        self.original_fidelity = self.fidelity(c.get_commands())
         if self.verbose:
             print("original fidelity is", self.original_fidelity)
         applied = False

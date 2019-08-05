@@ -14,14 +14,19 @@ cnot_noise = channels(0.02, 0.02, 0.02, 2)
 
 def run(n_qubits):
     circuit = random_pauli_gadget(n_qubits)
+    circuit = pauli_gadget(1.5, "XYZ", 3)
+    print(circuit.get_commands())
     Transform.OptimisePauliGadgets().apply(circuit)
-    rewriter = RewriteTket(circuit, one_qubit_noise, cnot_noise, verbose=True)
-    print(rewriter.target)
-    rewriter.reduce()
     Transform.ReduceSingles().apply(circuit)
-    print(rewriter.circuit.get_commands())
-    rewriter.set_circuit(circuit)
+    print(circuit.get_commands())
+    circuit2 = pauli_gadget(1.5001, "XYZ", 3)
+    print(circuit2.get_commands())
+    Transform.OptimisePauliGadgets().apply(circuit2)
+    Transform.ReduceSingles().apply(circuit2)
+    print(circuit2.get_commands())
+    rewriter = RewriteTket(circuit2, one_qubit_noise, cnot_noise, verbose=True)
     rewriter.reduce()
+    print(rewriter.circuit.get_commands())
 
 
 def run_multiple(n_qubits, n_iter):
@@ -83,7 +88,9 @@ def plot_fidelity(s):
 
 
 def get_fid(s: str, angle: float, rewriter: RewriteTket):
-    rewriter.set_circuit_and_target(pauli_gadget(angle, s, len(s)))
+    circuit = pauli_gadget(angle, s, len(s))
+    cleanup.apply(circuit)
+    rewriter.set_circuit_and_target(circuit)
     return rewriter.fidelity(rewriter.instructions)
 
 
@@ -105,7 +112,7 @@ def plot_angles(s):
     line_reduced, = plt.plot(angles, opt_fidelities)
     plt.xlabel("alpha (multiples of pi)")
     plt.ylabel("fidelity of " + s + " gadget")
-    plt.legend((line_orig, line_reduced), ("original", "optimized"))
+    plt.legend((line_orig, line_reduced), ("original", "optimized"), loc="best", bbox_to_anchor=(0.25, 0.5, 0.5, 0.5))
     plt.savefig("graphs/gadget_" + s + "_varied_angle.png")
     plt.close()
 
@@ -113,4 +120,3 @@ def plot_angles(s):
 np.set_printoptions(edgeitems=10, linewidth=1000)
 
 plot_angles("XYZ")
-
