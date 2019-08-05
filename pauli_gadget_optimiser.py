@@ -14,17 +14,7 @@ cnot_noise = channels(0.02, 0.02, 0.02, 2)
 
 def run(n_qubits):
     circuit = random_pauli_gadget(n_qubits)
-    circuit = pauli_gadget(1.5, "XYZ", 3)
-    print(circuit.get_commands())
-    Transform.OptimisePauliGadgets().apply(circuit)
-    Transform.ReduceSingles().apply(circuit)
-    print(circuit.get_commands())
-    circuit2 = pauli_gadget(1.5001, "XYZ", 3)
-    print(circuit2.get_commands())
-    Transform.OptimisePauliGadgets().apply(circuit2)
-    Transform.ReduceSingles().apply(circuit2)
-    print(circuit2.get_commands())
-    rewriter = RewriteTket(circuit2, one_qubit_noise, cnot_noise, verbose=True)
+    rewriter = RewriteTket(circuit, one_qubit_noise, cnot_noise, verbose=True)
     rewriter.reduce()
     print(rewriter.circuit.get_commands())
 
@@ -101,9 +91,11 @@ def get_opt_fid(s: str, angle: float, rewriter: RewriteTket):
 
 
 def plot_angles(s):
-    noise1 = []
-    noise2 = [depolarising_channel(0.01, 2)]
-    rewriter = RewriteTket(Circuit(len(s)), noise1, noise2, verbose=False)
+    worst1noise = channels(1.617e-2 / 3, 1.617e-2 / 3, 1.617e-2 / 3, 1)
+    best1noise = channels(1.545e-3 / 3, 1.545e-3 / 3, 1.545e-3 / 3, 1)
+    worst2noise = channels(1.735e-1 / 3, 1.735e-1 / 3, 1.735e-1 / 3, 2)
+    best2noise = channels(2.942e-2 / 3, 2.942e-2 / 3, 2.942e-2 / 3, 2)
+    rewriter = RewriteTket(Circuit(len(s)), best1noise, best2noise, verbose=False)
     angles = [2 * i / 100 for i in range(101)]
     fidelities = [get_fid(s, a, rewriter) for a in angles]
     opt_fidelities = [get_opt_fid(s, a, rewriter) for a in angles]
@@ -112,7 +104,7 @@ def plot_angles(s):
     line_reduced, = plt.plot(angles, opt_fidelities)
     plt.xlabel("alpha (multiples of pi)")
     plt.ylabel("fidelity of " + s + " gadget")
-    plt.legend((line_orig, line_reduced), ("original", "optimized"), loc="upper center")
+    plt.legend((line_orig, line_reduced), ("original", "optimized"), loc="upper left", bbox_to_anchor=(0.14, 0.95))
     plt.savefig("graphs/gadget_" + s + "_varied_angle.png")
     plt.close()
 
