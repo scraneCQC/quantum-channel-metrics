@@ -4,7 +4,7 @@ from pytket import Circuit
 from typing import List, Tuple
 
 from openfermion import uccsd_singlet_generator, jordan_wigner, uccsd_singlet_paramsize
-from numpy import  ndarray, full
+from numpy import ndarray, full
 
 from pytket.qiskit import tk_to_dagcircuit
 from qiskit.converters.dag_to_circuit import dag_to_circuit
@@ -103,8 +103,8 @@ def instructions_to_circuit(instructions):
     return c
 
 
-#circ = instructions_to_circuit(circ.get_commands()[:24])
+# circ = instructions_to_circuit(circ.get_commands()[:24])
 
-#print(circ.n_gates)
+# print(circ.n_gates)
 
-#print(dag_to_circuit(tk_to_dagcircuit(circ)))
+# print(dag_to_circuit(tk_to_dagcircuit(circ)))
