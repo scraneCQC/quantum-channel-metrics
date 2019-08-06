@@ -5,39 +5,37 @@ import numpy as np
 
 
 def amplified_qiskit_model(name, amplification=1, gate_time=0.001):
-    device = IBMQ.get_backend(name)
-    coupling = device.configuration().coupling_map
+    provider = IBMQ.load_account()
+    device = provider.get_backend(name)
     properties = device.properties()
     noise_model = NoiseModel()
 
     # depolarizing error
-    cnot_errs = [x.parameters[0].value for x in properties.gates if x.gate == 'cx']
-    ave_cnot_error = sum(cnot_errs) / len(cnot_errs)
-    print(ave_cnot_error)
-    noise_model.add_all_qubit_quantum_error(depolarizing_error(ave_cnot_error / amplification, 2), ['cx'])
+    cnot_depol_errs = [x.parameters[0].value for x in properties.gates if x.gate == 'cx']
+    ave_cnot_error = sum(cnot_depol_errs) / len(cnot_depol_errs)
+    cnot_depol_error = depolarizing_error(ave_cnot_error, 2)
+
+    single_depol_errs = [x.parameters[0].value for x in properties.gates if x.gate != 'cx']
+    ave_single_error = sum(single_depol_errs) / len(single_depol_errs)
+    single_depol_error = depolarizing_error(ave_single_error, 1)
 
     # amp damp
-    t1s = [x[0] for x in properties.qubits]
+    t1s = [x[0].value for x in properties.qubits]
     ave_t1 = sum(t1s) / len(t1s)
     t1_ratio = gate_time / (ave_t1 * amplification)
     amp_gamma = 1 - np.exp(-t1_ratio)
-    print(amp_gamma)
     amp_error = amplitude_damping_error(amp_gamma)
-    noise_model.add_all_qubit_quantum_error(amp_error, ['u2', 'u3'])
-
-    noise_model.add_all_qubit_quantum_error(amp_error.tensor(amp_error), ['cx'])
 
     # phase damp
-    t2s = [x[1] for x in properties.qubits]
+    t2s = [x[1].value for x in properties.qubits]
     ave_t2 = sum(t2s) / len(t2s)
     t2_ratio = gate_time / (ave_t2 * amplification)
     phase_gamma = 1 - np.exp(-t2_ratio)
-    print(phase_gamma)
     phase_error = phase_damping_error(phase_gamma)
-    noise_model.add_quantum_error(phase_error, ['u2', 'u3'])
 
-    noise_model.add_all_qubit_quantum_error(phase_error.tensor(phase_error), ['cx'])
+    total_error = single_depol_error.compose(amp_error.compose(phase_error))
+    noise_model.add_all_qubit_quantum_error(total_error, ['u1', 'u2', 'u3'])
+
+    noise_model.add_all_qubit_quantum_error(cnot_depol_error.compose(total_error.tensor(total_error)), ['cx'])
 
     return noise_model
-
-amplified_qiskit_model('ibmqx4')

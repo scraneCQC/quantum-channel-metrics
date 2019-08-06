@@ -1,11 +1,12 @@
 from Pauli import *
 import math
-from metrics.approximation_runner import get_pauli_expectation_v2
+from metrics.approximation_runner import get_pauli_expectation_v3
 from metrics import density_runner
 from metrics.density_runner import apply_channel
 from pytket import Circuit
 from itertools import product
 from typing import Iterable, Any, Dict, Optional
+from pytket.backends import Backend
 
 
 def f_pro(channel: Iterable[np.ndarray], unitary: np.ndarray) -> float:
@@ -43,9 +44,7 @@ def f_pro_experimental(circuit_string: Iterable[Any], unitary: np.ndarray, noise
     return 1 / dim ** 3 * sum(expectations)
 
 
-def f_pro_simulated(circuit_string: Iterable[Any], unitary: np.ndarray, p1: float = 0, gamma1: float = 0,
-                    gamma2: float = 0, key: Dict[Any, np.ndarray] = None) -> float:
-    print(circuit_string)
+def f_pro_simulated(circuit: Circuit, unitary: np.ndarray, backend: Backend) -> float:
     dim = unitary.shape[0]
     n_qubits = int(math.log(dim, 2))
     u_basis = get_diracs(n_qubits)
@@ -59,30 +58,17 @@ def f_pro_simulated(circuit_string: Iterable[Any], unitary: np.ndarray, p1: floa
     sigmas = get_diracs(n_qubits)
     b = np.array([[np.trace(unitary @ u_basis[j] @ unitary.transpose().conjugate() @ sigmas[l]) / dim for l in range(dim ** 2)] for j in range(dim ** 2)])
     m = a.transpose() @ b
-
     one_qubit_preps = [(lambda i, c: c.X(i)), (lambda i, c: c.H(i)), (lambda i, c: c.Rx(i, -0.5)), (lambda i, c: None)]
-
     def prepare_state(single_qubit_states):
-        # single_qubit_state: a list of integers where {0: I, 1: I+X, 2: I+Y, 3: I+Z} for density of i'th qubit
         circuit = Circuit(n_qubits)
         for i in range(len(single_qubit_states)):
             one_qubit_preps[single_qubit_states[i]](i, circuit)
         return circuit
-
     preps = [prepare_state(t) for t in product([0, 1, 2, 3], repeat=n_qubits)]
-
-    # expectations = np.array([[np.trace(sigmas[l] @ density_runner.run_by_matrices(circuit_string, state_basis[k], p1, gamma1, gamma2, key))
-    #                .real for k in range(dim ** 2)] for l in range(dim ** 2)])
-
     expectations = np.zeros((dim ** 2, dim ** 2))
     for k, l in list(product(range(dim ** 2), range(dim ** 2))):
         s = list(product("IXYZ", repeat=n_qubits))
-        expectations[l][k] = get_pauli_expectation_v2(circuit_string, preps[k], "".join(s[l]),
-                                                   p1=p1, gamma1=gamma1, gamma2=gamma2, key=key, shots=int(1e5)) * dim
-    #expectations = np.array([[get_pauli_expectation(circuit_string, prep, "".join(s), n_qubits,
-    #                                                p1=p1, gamma1=gamma1, gamma2=gamma2, key=key, shots=100000) * dim
-    #                          for prep in preps] for s in product("IXYZ", repeat=n_qubits)])
-
+        expectations[l][k] = get_pauli_expectation_v3(circuit, preps[k], "".join(s[l]), backend, shots=int(1)) * dim
     return 1 / dim ** 3 * sum(expectations[k][l] * m[l][k] for l in range(dim ** 2) for k in range(dim ** 2)).real
 
 
@@ -103,5 +89,5 @@ def bures(channel: Iterable[np.ndarray], unitary: np.ndarray) -> float:
     return (2 - 2 * f_pro(channel, unitary) ** 0.5) ** 0.5
 
 
-def C(channel: Iterable[np.ndarray], unitary: np.ndarray) -> float: # That's the only name they give it
+def C(channel: Iterable[np.ndarray], unitary: np.ndarray) -> float:  # That's the only name they give it
     return (1 - f_pro(channel, unitary)) ** 0.5
