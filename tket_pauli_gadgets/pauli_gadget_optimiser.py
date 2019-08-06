@@ -1,4 +1,4 @@
-from tket_pauli_gadgets.pauli_gadgets import random_pauli_gadget, pauli_gadget
+from tket_pauli_gadgets.pauli_gadgets import random_pauli_gadget, pauli_gadget, random_gadget_circuit
 from tket_pauli_gadgets.tket_circuit_rewriter import RewriteTket, cleanup
 from pytket import Transform, Circuit
 from noise import channels, phase_damping_channel
@@ -10,7 +10,7 @@ cnot_noise = channels(0.02, 0.02, 0.02, 2)
 
 
 def run(n_qubits):
-    circuit = random_pauli_gadget(n_qubits)
+    circuit = random_gadget_circuit(n_qubits, 3)
     rewriter = RewriteTket(circuit, one_qubit_noise, cnot_noise, verbose=True)
     rewriter.reduce()
     print(rewriter.circuit.get_commands())
@@ -107,4 +107,4 @@ def plot_angles(s):
 
 np.set_printoptions(edgeitems=10, linewidth=1000)
 
-run(6)
+run(4)

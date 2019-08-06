@@ -37,6 +37,12 @@ def pauli_gadget(alpha, s, n_qubits):
 def random_pauli_gadget(n_qubits):
     s = "".join(random.choices("XYZ", k=n_qubits))
     alpha = random.random() * 2
-    print("s", s)
-    print("alpha", alpha)
     return pauli_gadget(alpha, s, n_qubits)
+
+
+def random_gadget_circuit(n_qubits, n_gadgets):
+    c = Circuit(n_qubits)
+    for _ in range(n_gadgets):
+        c.add_circuit(random_pauli_gadget(n_qubits), list(range(n_qubits)))
+    return c
+
