@@ -1,10 +1,7 @@
-from pauli_gadgets import random_pauli_gadget, pauli_gadget
-from tket_circuit_rewriter import RewriteTket, cleanup
+from tket_pauli_gadgets.pauli_gadgets import random_pauli_gadget, pauli_gadget
+from tket_pauli_gadgets.tket_circuit_rewriter import RewriteTket, cleanup
 from pytket import Transform, Circuit
-from noise import channels, depolarising_channel, amplitude_damping_channel, phase_damping_channel
-from itertools import product
-import random
-import math
+from noise import channels, phase_damping_channel
 import numpy as np
 import matplotlib.pyplot as plt
 

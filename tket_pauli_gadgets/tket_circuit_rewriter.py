@@ -1,12 +1,10 @@
-from pytket import Circuit, Transform, OpType
-from common_gates import multi_qubit_matrix, H, Rx, Ry, Rz, U1, U3, cnot, cnot12, cnot21, S, V
-from Pauli import X, Y, Z, get_diracs, one_qubit_diracs
+from pytket import Circuit, Transform
+from Pauli import get_diracs
 from functools import reduce
 import numpy as np
-import scipy.sparse as sp
 import math
-from process_matrix import ProcessMatrixFinder, matrices_with_params, matrices_no_params
-import werner
+from tket_pauli_gadgets.process_matrix import ProcessMatrixFinder, matrices_with_params, matrices_no_params
+from tket_pauli_gadgets import werner
 
 # noinspection PyCallByClass
 cleanup = Transform.sequence([
