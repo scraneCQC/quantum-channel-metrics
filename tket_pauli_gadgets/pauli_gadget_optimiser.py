@@ -61,7 +61,7 @@ def run_and_optimize_multiple_angles(n_qubits, n_angles, s, noise1=[], noise2=[]
 
 
 def plot_fidelity(s):
-    noises = [i / 100 for i in range(20)]
+    noises = [i / 1000 for i in range(20)]
     fidelities = [run_multiple_angles(len(s), 20, s, [phase_damping_channel(p)], [phase_damping_channel(p, 2)]) for p in noises]
     improved_fidelities = [run_and_optimize_multiple_angles(len(s), 20, s, [phase_damping_channel(p)], [phase_damping_channel(p, 2)]) for p in noises]
     plt.figure()
@@ -83,8 +83,7 @@ def get_fid(s: str, angle: float, rewriter: RewriteTket):
 
 def get_opt_fid(s: str, angle: float, rewriter: RewriteTket):
     rewriter.set_circuit_and_target(pauli_gadget(angle, s, len(s)))
-    rewriter.reduce()
-    return rewriter.fidelity(rewriter.instructions)
+    return rewriter.reduce()[1]
 
 
 def plot_angles(s):
@@ -102,7 +101,7 @@ def plot_angles(s):
     plt.xlabel("alpha (multiples of pi)")
     plt.ylabel("fidelity of " + s + " gadget")
     plt.legend((line_orig, line_reduced), ("original", "optimized"), loc="upper left", bbox_to_anchor=(0.14, 0.95))
-    plt.savefig("graphs/gadget_" + s + "_varied_angle.png")
+    plt.savefig("graphs/gadget_" + s + "_varied_angle_no_cutoff.png")
     plt.close()
 
 

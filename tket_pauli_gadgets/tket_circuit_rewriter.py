@@ -74,15 +74,23 @@ class RewriteTket:
             params = inst.op.get_params()
             for i in range(len(params)):
                 if params[i] not in [0, 0.5, 1, 1.5]:
-                    new_params = list(params)
-                    new_params[i] = round(params[i] * 2) / 2
-                    new_circuit = self.instructions_to_circuit(self.instructions[:index])
-                    new_circuit.add_operation(inst.op.get_type(), new_params, inst.qubits)
-                    new_circuit.add_circuit(self.instructions_to_circuit(self.instructions[index + 1:]), list(range(self.n_qubits)))
-                    cleanup.apply(new_circuit)
-                    new_fidelity = self.fidelity(new_circuit.get_commands())
-                    if new_fidelity > self.original_fidelity:
-                        return new_fidelity - self.original_fidelity, new_circuit, index, new_params
+                    res = dict()
+                    for rounded in {round(params[i]), round(params[i] * 2) / 2}:
+                        new_params = list(params)
+                        new_params[i] = rounded
+                        new_circuit = self.instructions_to_circuit(self.instructions[:index])
+                        new_circuit.add_operation(inst.op.get_type(), new_params, inst.qubits)
+                        new_circuit.add_circuit(self.instructions_to_circuit(self.instructions[index + 1:]), list(range(self.n_qubits)))
+                        cleanup.apply(new_circuit)
+                        new_fidelity = self.fidelity(new_circuit.get_commands())
+                        if rounded in res:
+                            if res[rounded][0] < new_fidelity - self.original_fidelity:
+                                res[rounded] = (new_fidelity - self.original_fidelity, new_circuit, index, new_params)
+                        else:
+                            res[rounded] = (new_fidelity - self.original_fidelity, new_circuit, index, new_params)
+                    best = max(res.values(), key=lambda x: x[0])
+                    if best[0] > 0:
+                        return best
         return -1, None, None, None
 
     def change_any_angle(self):
@@ -122,15 +130,16 @@ class RewriteTket:
     def fidelity(self, instructions):
         mat = self.process_finder.instructions_to_process_matrix(instructions)
         if type(mat) != np.ndarray:
-            s = werner.einsum('kl,lk->', self.contracted, mat).real
-        else:
-            s = np.einsum('kl,lk->', self.contracted, mat, optimize=True).real
+            #s = werner.einsum('kl,lk->', self.contracted, mat)
+            mat = mat.todense()  # werner.einsum was failing here sometimes
+        s = np.einsum('kl,lk->', self.contracted, mat, optimize=True).real
         return 2 ** (-3 * self.n_qubits) * s
 
     def reduce(self):
         cleanup.apply(self.circuit)
         self.set_circuit(self.circuit)
-        self.original_fidelity = self.fidelity(self.circuit.get_commands())
+        f = self.fidelity(self.circuit.get_commands())
+        self.original_fidelity = f
         if self.verbose:
             print("original fidelity is", self.original_fidelity)
         applied = False
@@ -142,6 +151,6 @@ class RewriteTket:
                 print("New fidelity is", new_fidelity)
             else:
                 print("Didn't find anything to improve")
-        return new_fidelity
+        return (f, new_fidelity)
 
 
