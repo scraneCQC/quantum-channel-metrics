@@ -111,4 +111,4 @@ def plot_angles(s):
 
 np.set_printoptions(edgeitems=10, linewidth=1000)
 
-plot_angles("XXX")
+run(6)

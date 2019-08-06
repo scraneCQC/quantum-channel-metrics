@@ -4,6 +4,7 @@ from pytket import OpType
 import numpy as np
 import math
 from functools import reduce
+import scipy.sparse as sp
 
 
 matrices_no_params = {OpType.Z: lambda i, n: multi_qubit_matrix(Z, i[0], n),
@@ -26,6 +27,7 @@ class ProcessMatrixFinder:
         self.process_cache = dict()
         self.two_qubit_diracs = get_diracs(2)
         self.n_qubits = n_qubits
+        self.use_sparse = n_qubits > 4
         self.d2 = 4 ** n_qubits
         self.basic_cnot_processes = {1: self.get_adjacent_cnot_process_matrix(0, 1),
                                      -1: self.get_adjacent_cnot_process_matrix(1, 0)}
@@ -64,11 +66,20 @@ class ProcessMatrixFinder:
         g = self.cnot_noise_process @ g
         d = abs(control - target)
         m = min(control, target)
-        if d > 1:
-            g = np.kron(np.eye(4 ** (d - 1)), g)
-            g = np.moveaxis(g.reshape((4, 4) * (d + 1)), [0, d - 1, d + 1, 2 * d], [d - 1, 0, 2 * d, d + 1])\
-                .reshape((4 ** (d + 1), 4 ** (d + 1)))
-        return np.kron(np.eye(4 ** m), np.kron(g, np.eye(4 ** (self.n_qubits - 1 - max(control, target)))))
+        if self.use_sparse:
+            if d > 1:
+                g =np.kron(np.eye(4 ** (d - 1)), g)
+                g = np.moveaxis(g.reshape((4, 4) * (d + 1)), [0, d - 1, d + 1, 2 * d], [d - 1, 0, 2 * d, d + 1])\
+                    .reshape((4 ** (d + 1), 4 ** (d + 1)))
+            g = sp.csr_matrix(g)
+            z = sp.kron(sp.eye(4 ** m), sp.kron(g, sp.eye(4 ** (self.n_qubits - 1 - max(control, target)))))
+        else:
+            if d > 1:
+                g = np.kron(np.eye(4 ** (d - 1)), g)
+                g = np.moveaxis(g.reshape((4, 4) * (d + 1)), [0, d - 1, d + 1, 2 * d], [d - 1, 0, 2 * d, d + 1])\
+                    .reshape((4 ** (d + 1), 4 ** (d + 1)))
+            z = np.kron(np.eye(4 ** m), np.kron(g, np.eye(4 ** (self.n_qubits - 1 - max(control, target)))))
+        return z
 
     def get_single_qubit_noise_process(self, noise_channel):
         little_process = np.vstack([[np.einsum('ij,ji->',
@@ -97,11 +108,14 @@ class ProcessMatrixFinder:
         little_process = self.single_qubit_gate_noise_process @ \
             np.vstack([[np.einsum('ij,ji->', gate @ d2 @ gate.transpose().conjugate(), d1, optimize=True) / 2
                         for d1 in one_qubit_diracs] for d2 in one_qubit_diracs]).transpose()
-        z = np.kron(np.kron(np.eye(4 ** qubit), little_process), np.eye(4 ** (self.n_qubits - qubit - 1)))
+        if self.use_sparse:
+            z = sp.kron(sp.kron(sp.eye(4 ** qubit), sp.csr_matrix(little_process)), sp.eye(4 ** (self.n_qubits - qubit - 1)))
+        else:
+            z = np.kron(np.kron(np.eye(4 ** qubit), little_process), np.eye(4 ** (self.n_qubits - qubit - 1)))
         self.process_cache.update({s: z})
         return z
 
-    def get_circuit_process_matrix(self, instructions):
+    def instructions_to_process_matrix(self, instructions):
         s = "".join([str(inst) for inst in instructions])
         if s in self.process_cache:
             return self.process_cache[s]
@@ -109,13 +123,13 @@ class ProcessMatrixFinder:
         for i in range(len(instructions)):
             end = "".join([str(inst) for inst in instructions[i:]])
             if end in self.process_cache:
-                m = self.process_cache[end] @ self.get_circuit_process_matrix(instructions[:i])
+                m = self.process_cache[end] @ self.instructions_to_process_matrix(instructions[:i])
                 if l < 5:
                     self.process_cache.update({s: m})
                 return m
             beginning = "".join([str(inst) for inst in instructions[:(l - i)]])
             if beginning in self.process_cache:
-                m = self.get_circuit_process_matrix(instructions[(l - i):]) @ self.process_cache[beginning]
+                m = self.instructions_to_process_matrix(instructions[(l - i):]) @ self.process_cache[beginning]
                 if l < 5:
                     self.process_cache.update({s: m})
                 return m

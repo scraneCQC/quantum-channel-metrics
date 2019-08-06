@@ -3,8 +3,10 @@ from common_gates import multi_qubit_matrix, H, Rx, Ry, Rz, U1, U3, cnot, cnot12
 from Pauli import X, Y, Z, get_diracs, one_qubit_diracs
 from functools import reduce
 import numpy as np
+import scipy.sparse as sp
 import math
 from process_matrix import ProcessMatrixFinder, matrices_with_params, matrices_no_params
+import werner
 
 # noinspection PyCallByClass
 cleanup = Transform.sequence([
@@ -22,16 +24,24 @@ class RewriteTket:
         self.verbose = verbose
         self.circuit = circuit
         self.n_qubits = circuit.n_qubits
+        self.use_sparse = self.n_qubits > 4
         self.instructions = circuit.get_commands()
         self.target = target
         if target is None:
             self.target = self.matrix_list_product([self.instruction_to_unitary(inst) for inst in self.instructions[::-1]])
         self.u_basis = get_diracs(self.n_qubits)
         self.state_basis = np.array(self.u_basis)
-        self.sigmas = np.array([self.target @ u @ self.target.transpose().conjugate() for u in self.u_basis])
-        self.contracted = np.einsum('kij,lji->kl', self.sigmas, self.state_basis, optimize=True)
+        if self.use_sparse:
+            a = werner.einsum('knm,in->kim', self.state_basis, self.target)
+            b = werner.einsum('kim,jm->kij', a, self.target.conjugate())
+            self.contracted = werner.einsum('kij,lji->kl', b, self.state_basis)
+        else:
+            self.contracted = np.einsum('knm,lji,in,jm->kl',
+                            self.state_basis, self.state_basis, self.target, self.target.conjugate(), optimize=True)
         self.process_finder = ProcessMatrixFinder(self.n_qubits, noise_channels, cnot_noise_channels)
         self.original_fidelity = -1
+        if self.verbose:
+            print("Ready to go")
 
     def set_circuit(self, circuit: Circuit):
         self.circuit = circuit
@@ -40,8 +50,13 @@ class RewriteTket:
 
     def set_target_unitary(self, target: np.ndarray):
         self.target = target
-        self.sigmas = np.array([self.target @ u @ self.target.transpose().conjugate() for u in self.u_basis])
-        self.contracted = np.einsum('kij,lji->kl', self.sigmas, self.state_basis, optimize=True)
+        if self.use_sparse:
+            a = werner.einsum('knm,in->kim', self.state_basis, self.target)
+            b = werner.einsum('kim,jm->kij', a, self.target.conjugate())
+            self.contracted = werner.einsum('kij,lji->kl', b, self.state_basis)
+        else:
+            self.contracted = np.einsum('knm,lji,in,jm->kl', self.state_basis, self.state_basis, self.target,
+                                        self.target.conjugate(), optimize=True)
 
     def set_circuit_and_target(self, circuit):
         self.set_circuit(circuit)
@@ -78,7 +93,7 @@ class RewriteTket:
         else:
             diffs = []
             for i in range(len(self.instructions) - 1):
-                diffs. append((self.should_commute(i)))
+                diffs. append((self.should_change_angle(i)))
         if len(diffs) == 0:
             return False
         f, c, i, p = max(diffs, key=lambda x: x[0])
@@ -107,29 +122,28 @@ class RewriteTket:
             raise ValueError("Unexpected instruction", instruction)
 
     def fidelity(self, instructions):
-        s = np.einsum('kl,lk->', self.contracted, self.process_finder.get_circuit_process_matrix(instructions), optimize=True).real
+        mat = self.process_finder.instructions_to_process_matrix(instructions)
+        if type(mat) != np.ndarray:
+            s = werner.einsum('kl,lk->', self.contracted, mat).real
+        else:
+            s = np.einsum('kl,lk->', self.contracted, mat, optimize=True).real
         return 2 ** (-3 * self.n_qubits) * s
 
     def reduce(self):
-        if self.n_qubits < 6:
-            for i in range(1, len(self.instructions) + 1):
-                for s in {0, len(self.instructions) - i}:
-                    self.process_finder.process_cache.update({"".join([str(inst) for inst in self.instructions[s: s + i]]):
-                                               self.process_finder.get_circuit_process_matrix(self.instructions[s: s + i])})
+        cleanup.apply(self.circuit)
+        self.set_circuit(self.circuit)
         self.original_fidelity = self.fidelity(self.circuit.get_commands())
         if self.verbose:
             print("original fidelity is", self.original_fidelity)
         applied = False
         while self.change_any_angle():
             applied = True
+        new_fidelity = self.fidelity(self.instructions)
         if self.verbose:
             if applied:
-                print("New fidelity is", self.fidelity(self.instructions))
+                print("New fidelity is", new_fidelity)
             else:
                 print("Didn't find anything to improve")
-        if not applied:
-            cleanup.apply(self.circuit)
-            self.set_circuit(self.circuit)
-        return self.fidelity(self.instructions)
+        return new_fidelity
 
 
