@@ -5,20 +5,21 @@ from noise import channels, phase_damping_channel
 import numpy as np
 import matplotlib.pyplot as plt
 
-one_qubit_noise = channels(0.01, 0.01, 0.01, 1)
-cnot_noise = channels(0.02, 0.02, 0.02, 2)
+# based on ibmzx4 averages
+single_noise = channels(0.0013565511454625035, 2.234693513991637e-05, 5.8632130703228924e-05)
+cnot_noise = channels(0.04533192384453133, 2.234693513991637e-05, 5.8632130703228924e-05)
 
 
 def run(n_qubits):
     circuit = random_gadget_circuit(n_qubits, 3)
-    rewriter = RewriteTket(circuit, one_qubit_noise, cnot_noise, verbose=True)
+    rewriter = RewriteTket(circuit, single_noise, cnot_noise, verbose=True)
     rewriter.reduce()
     print(rewriter.circuit.get_commands())
 
 
 def run_multiple(n_qubits, n_iter):
     c = Circuit(n_qubits)
-    rewriter = RewriteTket(c, one_qubit_noise, cnot_noise, verbose=False)
+    rewriter = RewriteTket(c, single_noise, cnot_noise, verbose=False)
     rewriter.verbose = True
     for _ in range(n_iter):
         circuit = random_pauli_gadget(n_qubits)
@@ -107,4 +108,3 @@ def plot_angles(s):
 
 np.set_printoptions(edgeitems=10, linewidth=1000)
 
-run(4)
