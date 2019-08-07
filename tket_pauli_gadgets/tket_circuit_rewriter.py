@@ -5,6 +5,7 @@ import numpy as np
 import math
 from tket_pauli_gadgets.process_matrix import ProcessMatrixFinder, matrices_with_params, matrices_no_params
 from tket_pauli_gadgets import werner
+from common_gates import swap
 
 # noinspection PyCallByClass
 cleanup = Transform.sequence([
@@ -15,7 +16,6 @@ cleanup = Transform.sequence([
                               Transform.OptimisePauliGadgets(),
                               Transform.ReduceSingles()])
 
-
 class RewriteTket:
 
     def __init__(self, circuit: Circuit, noise_channels, cnot_noise_channels, target=None, verbose=False):
@@ -23,10 +23,10 @@ class RewriteTket:
         self.circuit = circuit
         self.n_qubits = circuit.n_qubits
         self.use_sparse = self.n_qubits > 4
-        self.instructions = circuit.get_commands()
+        #self.instructions = circuit.get_commands()
         self.target = target
         if target is None:
-            self.target = self.matrix_list_product([self.instruction_to_unitary(inst) for inst in self.instructions[::-1]])
+            self.target = self.circuit_to_unitary(circuit)
         self.u_basis = get_diracs(self.n_qubits)
         self.state_basis = np.array(self.u_basis)
         if self.use_sparse:
@@ -43,8 +43,10 @@ class RewriteTket:
 
     def set_circuit(self, circuit: Circuit):
         self.circuit = circuit
-        self.n_qubits = circuit.n_qubits
-        self.instructions = circuit.get_commands()
+
+    @property
+    def instructions(self):
+        return self.circuit.get_commands()
 
     def set_target_unitary(self, target: np.ndarray):
         self.target = target
@@ -58,8 +60,7 @@ class RewriteTket:
 
     def set_circuit_and_target(self, circuit):
         self.set_circuit(circuit)
-        self.set_target_unitary(self.matrix_list_product(
-            [self.instruction_to_unitary(inst) for inst in self.instructions[::-1]]))
+        self.set_target_unitary(self.circuit_to_unitary(circuit))
 
     def matrix_list_product(self, matrices, default_size=None):
         if len(matrices) == 0:
@@ -103,7 +104,7 @@ class RewriteTket:
         if len(diffs) == 0:
             return False
         f, c, i, p = max(diffs, key=lambda x: x[0])
-        if f > 1e-5:
+        if f > 1e-7:
             if self.verbose:
                 print("Changing angle of", self.instructions[i], "to", p , "to improve fidelity by", f)
             self.set_circuit(c)
@@ -127,17 +128,25 @@ class RewriteTket:
         else:
             raise ValueError("Unexpected instruction", instruction)
 
+    def circuit_to_unitary(self, circuit):
+        return self.matrix_list_product([self.instruction_to_unitary(i) for i in circuit.get_commands()[::-1]])
+
     def fidelity(self, instructions):
         mat = self.process_finder.instructions_to_process_matrix(instructions)
         if type(mat) != np.ndarray:
             #s = werner.einsum('kl,lk->', self.contracted, mat)
             mat = mat.todense()  # werner.einsum was failing here sometimes
         s = np.einsum('kl,lk->', self.contracted, mat, optimize=True).real
+        f = 2 ** (-3 * self.n_qubits) * s
+        if f < 0.5:  # Hack
+            mat2 = self.process_finder.unitary_to_process_matrix(swap(0, 1, self.n_qubits)) @ mat
+            s2 = np.einsum('kl,lk->', self.contracted, mat2, optimize=True).real
+            if s2 > s:
+                return 2 ** (-3 * self.n_qubits) * s2
         return 2 ** (-3 * self.n_qubits) * s
 
     def reduce(self):
         cleanup.apply(self.circuit)
-        self.set_circuit(self.circuit)
         f = self.fidelity(self.circuit.get_commands())
         self.original_fidelity = f
         if self.verbose:

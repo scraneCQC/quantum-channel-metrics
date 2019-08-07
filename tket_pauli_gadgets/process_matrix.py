@@ -115,6 +115,10 @@ class ProcessMatrixFinder:
         self.process_cache.update({s: z})
         return z
 
+    def unitary_to_process_matrix(self, unitary):
+        return np.vstack([[np.einsum('ij,ji->', unitary @ d2 @ unitary.transpose().conjugate(), d1, optimize=True) / (2 ** self.n_qubits)
+                        for d1 in get_diracs(self.n_qubits)] for d2 in get_diracs(self.n_qubits)]).transpose()
+
     def instructions_to_process_matrix(self, instructions):
         s = "".join([str(inst) for inst in instructions])
         if s in self.process_cache:

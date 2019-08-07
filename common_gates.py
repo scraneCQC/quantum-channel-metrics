@@ -53,6 +53,19 @@ def get_cnot_key(n_qubits):
     return {**key1, **key2}
 
 
+swap_basic = np.array([[1, 0, 0, 0], [0, 0, 1, 0], [0, 1, 0, 0], [0, 0, 0, 1]])
+
+def swap(i: int, j: int, n_qubits: int):
+    g = swap_basic
+    d = abs(i - j)
+    m = min(i, j)
+    ma = max(i, j)
+    if d > 1:
+        g = np.kron(np.eye(2 ** (d - 1)), g)
+        g = np.moveaxis(g.reshape((2,2) * (d + 1)), [0, d - 1, d + 1, 2 * d], [d - 1, 0, 2 * d, d + 1]).reshape((2 ** (d + 1), 2 ** (d + 1)))
+    return np.kron(np.eye(2 ** m), np.kron(g, np.eye(2 ** (n_qubits - 1 - ma))))
+
+
 def Rz(angle: float, i: int, n_qubits: int) -> np.ndarray:
     gate = np.array([[cmath.exp(complex(0, - angle / 2)), 0], [0, cmath.exp(complex(0, angle / 2))]])
     for _ in range(i):
