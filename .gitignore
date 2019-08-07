@@ -1,4 +1,4 @@
 venv/
 .idea/
 __pycache__/
-/graphs/gadget_*
+/graphs/*
