@@ -70,7 +70,7 @@ def generate_hf_wavefunction_circuit(n_qubit: int, n_alpha_electron: int, n_beta
 
 
 # entangle
-def get_mb_wavefunction_circuit(packed_amplitudes: ndarray, n_spin_orb, n_electron):
+def get_mb_wavefunction_circuit(packed_amplitudes: ndarray, n_spin_orb, n_electron, n_gadgets):
 
    fermion_generator = uccsd_singlet_generator(packed_amplitudes, n_spin_orb,
                                                n_electron)
@@ -80,7 +80,7 @@ def get_mb_wavefunction_circuit(packed_amplitudes: ndarray, n_spin_orb, n_electr
 
    mb_wavefunction_circuit = generate_hf_wavefunction_circuit(n_spin_orb, n_electron//2, n_electron//2)
 
-   for pauli, coeff in qubit_generator.terms.items():
+   for pauli, coeff in list(qubit_generator.terms.items())[:n_gadgets]:
        pauli_evolution(pauli, coeff, mb_wavefunction_circuit)
 
    return mb_wavefunction_circuit
@@ -92,7 +92,9 @@ n_amplitudes = uccsd_singlet_paramsize(n_qubit, n_electron)
 
 amplitudes = full(n_amplitudes, 0.5)
 
-circ = get_mb_wavefunction_circuit(amplitudes, n_qubit, n_electron)
+
+def get_circuit(params, n_gadgets):
+    return get_mb_wavefunction_circuit(params, 4, 2, n_gadgets)
 
 
 def instructions_to_circuit(instructions):

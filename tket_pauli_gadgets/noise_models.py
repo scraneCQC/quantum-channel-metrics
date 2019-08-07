@@ -13,11 +13,11 @@ def amplified_qiskit_model(name, amplification=1, gate_time=0.001):
 
     # depolarizing error
     cnot_depol_errs = [x.parameters[0].value for x in properties.gates if x.gate == 'cx']
-    ave_cnot_error = sum(cnot_depol_errs) / len(cnot_depol_errs)
+    ave_cnot_error = sum(cnot_depol_errs) / len(cnot_depol_errs) / amplification
     cnot_depol_error = depolarizing_error(ave_cnot_error, 2)
 
     single_depol_errs = [x.parameters[0].value for x in properties.gates if x.gate != 'cx']
-    ave_single_error = sum(single_depol_errs) / len(single_depol_errs)
+    ave_single_error = sum(single_depol_errs) / len(single_depol_errs) / amplification
     single_depol_error = depolarizing_error(ave_single_error, 1)
 
     # amp damp

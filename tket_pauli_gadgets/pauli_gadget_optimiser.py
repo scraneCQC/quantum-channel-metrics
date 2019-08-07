@@ -1,13 +1,13 @@
 from tket_pauli_gadgets.pauli_gadgets import random_pauli_gadget, pauli_gadget, random_gadget_circuit
 from tket_pauli_gadgets.tket_circuit_rewriter import RewriteTket, cleanup
 from pytket import Transform, Circuit
-from noise import channels, phase_damping_channel
+from noise import phase_damping_channel
+from tket_pauli_gadgets.noise_models import channels
 import numpy as np
 import matplotlib.pyplot as plt
 
-# based on ibmzx4 averages
-single_noise = channels(0.0013565511454625035, 2.234693513991637e-05, 5.8632130703228924e-05)
-cnot_noise = channels(0.04533192384453133, 2.234693513991637e-05, 5.8632130703228924e-05)
+
+single_noise, cnot_noise = channels(amplification=1)
 
 
 def run(n_qubits):
@@ -88,11 +88,7 @@ def get_opt_fid(s: str, angle: float, rewriter: RewriteTket):
 
 
 def plot_angles(s):
-    worst1noise = channels(1.617e-2 / 3, 1.617e-2 / 3, 1.617e-2 / 3, 1)
-    best1noise = channels(1.545e-3 / 3, 1.545e-3 / 3, 1.545e-3 / 3, 1)
-    worst2noise = channels(1.735e-1 / 3, 1.735e-1 / 3, 1.735e-1 / 3, 2)
-    best2noise = channels(2.942e-2 / 3, 2.942e-2 / 3, 2.942e-2 / 3, 2)
-    rewriter = RewriteTket(Circuit(len(s)), best1noise, best2noise, verbose=False)
+    rewriter = RewriteTket(Circuit(len(s)), single_noise, cnot_noise, verbose=False)
     angles = [2 * i / 100 for i in range(101)]
     fidelities = [get_fid(s, a, rewriter) for a in angles]
     opt_fidelities = [get_opt_fid(s, a, rewriter) for a in angles]
@@ -102,9 +98,11 @@ def plot_angles(s):
     plt.xlabel("alpha (multiples of pi)")
     plt.ylabel("fidelity of " + s + " gadget")
     plt.legend((line_orig, line_reduced), ("original", "optimized"), loc="upper left", bbox_to_anchor=(0.14, 0.95))
-    plt.savefig("graphs/gadget_" + s + "_varied_angle_no_cutoff.png")
+    plt.savefig("graphs/gadget_" + s + "_ibm_noise_model.png")
     plt.close()
 
 
 np.set_printoptions(edgeitems=10, linewidth=1000)
 
+
+plot_angles("XYZ")
