@@ -5,7 +5,7 @@ import numpy as np
 import math
 from tket_pauli_gadgets.process_matrix import ProcessMatrixFinder, matrices_with_params, matrices_no_params
 from tket_pauli_gadgets import werner
-from common_gates import swap
+from itertools import permutations
 
 # noinspection PyCallByClass
 cleanup = Transform.sequence([
@@ -23,7 +23,6 @@ class RewriteTket:
         self.circuit = circuit
         self.n_qubits = circuit.n_qubits
         self.use_sparse = self.n_qubits > 4
-        #self.instructions = circuit.get_commands()
         self.target = target
         if target is None:
             self.target = self.circuit_to_unitary(circuit)
@@ -138,12 +137,57 @@ class RewriteTket:
             mat = mat.todense()  # werner.einsum was failing here sometimes
         s = np.einsum('kl,lk->', self.contracted, mat, optimize=True).real
         f = 2 ** (-3 * self.n_qubits) * s
-        if f < 0.5:  # Hack
-            mat2 = self.process_finder.unitary_to_process_matrix(swap(0, 1, self.n_qubits)) @ mat
-            s2 = np.einsum('kl,lk->', self.contracted, mat2, optimize=True).real
-            if s2 > s:
-                return 2 ** (-3 * self.n_qubits) * s2
-        return 2 ** (-3 * self.n_qubits) * s
+        if f < 0.3:  # Hack
+            # TODO: better detection
+            # TODO: check for arbitrary permutations
+            if self.verbose:
+                print("Assuming the tket optimization pass swapped qubits")
+            for i in range(self.n_qubits):  # simple transposition
+                for j in range(i):
+                    mat2 = self.process_finder.get_swap_process_matrix(i, j) @ mat
+                    s2 = np.einsum('kl,lk->', self.contracted, mat2, optimize=True).real
+                    if s2 > s:
+                        f = 2 ** (-3 * self.n_qubits) * s2
+                    if f > 0.5:
+                        if self.verbose:
+                            print("assuming the swap was between", i, "and", j)
+                        return f
+            for i, j, k, l in [(0, 1, 2, 3), (0, 2, 1, 3), (0, 3, 1, 2)]: # double transposition
+                mat2 = self.process_finder.get_swap_process_matrix(i, j) @ self.process_finder.get_swap_process_matrix(
+                    l, k) @ mat
+                s2 = np.einsum('kl,lk->', self.contracted, mat2, optimize=True).real
+                if s2 > s:
+                    f = 2 ** (-3 * self.n_qubits) * s2
+                if f > 0.5:
+                    if self.verbose:
+                        print("assuming a double transposition of", i, j, "and", k, l)
+                    return f
+            for i in range(self.n_qubits):  # 3-cycles
+                for j in range(i):
+                    for k in range(i):
+                        if j != k:
+                            mat2 = self.process_finder.get_swap_process_matrix(i, j) @ self.process_finder.get_swap_process_matrix(j, k) @ mat
+                            s2 = np.einsum('kl,lk->', self.contracted, mat2, optimize=True).real
+                            if s2 > s:
+                                f = 2 ** (-3 * self.n_qubits) * s2
+                            if f > 0.5:
+                                if self.verbose:
+                                    print("assuming a 3-cycle between", i, j, "and", k)
+                                return f
+            for i, j, k, l in [(3, ) + p for p in permutations(list(range(3)))]:  # 4 - cycles
+                mat2 = self.process_finder.get_swap_process_matrix(i, j) @ self.process_finder.get_swap_process_matrix(
+                    j, k) @ self.process_finder.get_swap_process_matrix(k, l) @ mat
+                s2 = np.einsum('kl,lk->', self.contracted, mat2, optimize=True).real
+                if s2 > s:
+                    f = 2 ** (-3 * self.n_qubits) * s2
+                if f > 0.5:
+                    if self.verbose:
+                        print("assuming a 4-cycle of", i, j, k, l)
+                    return f
+            if self.verbose:
+                print("didn't find a swap that corrected")
+                print(instructions)
+        return f
 
     def reduce(self):
         cleanup.apply(self.circuit)

@@ -6,46 +6,42 @@ from pytket.qiskit import tk_to_dagcircuit
 from qiskit.converters.dag_to_circuit import dag_to_circuit
 from pytket import Circuit, Transform, OpType
 import matplotlib.pyplot as plt
+import math
 
-
+"".split()
 np.set_printoptions(edgeitems=10, linewidth=1000)
 
-amplification = 2001
+amplification = 2000
 single_noise, cnot_noise = channels(amplification=amplification)
-params = [-4.876143648314624e-05, 0.057384102234558684]
-
+single_noise, cnot_noise = [], []
+params = [1.69252673e-07, 5.74166793e-02]
 
 circ = get_circuit(params, 13)
-rewriter = RewriteTket(circ, single_noise, cnot_noise, verbose=False)
+rewriter = RewriteTket(circ, single_noise, cnot_noise, verbose=True)
 
-none = []
-fid_basic_tket = []
+fid_none = []
+fid_tket = []
 fid_opt = []
 
 for i in range(13):
     print(i)
     short_circ = get_circuit(params, i)
-    none.append(rewriter.fidelity(short_circ.get_commands()))
+    fid_none.append(rewriter.fidelity(short_circ.get_commands()))
     rewriter.set_circuit(short_circ)
     f = rewriter.reduce()
-    print(f)
-    fid_basic_tket.append(f[0])
+    fid_tket.append(f[0])
     fid_opt.append(f[1])
 
-print(none)
-print(fid_basic_tket)
-print(fid_opt)
 
 plt.figure()
-plt.plot(none, label="no optimization")
-plt.plot(fid_basic_tket, label="basic tket")
-plt.plot(fid_opt, label="basic tket + small angle")
+plt.plot(fid_none, label="no optimization")
+plt.plot(fid_tket, label="tket")
+plt.plot(fid_opt, label="tket + small angle")
 plt.xlabel("Number of Pauli gadgets")
 plt.ylabel("Fidelity")
 plt.legend()
 plt.tight_layout()
-plt.savefig("../graphs/number_of_gadgets_hydrogen_noise_amp_" + str(amplification) + ".png")
+plt.savefig("../graphs/number_of_gadgets_hydrogen_noise_amp_" + str(amplification) + "_params_" + str(params) + ".png")
 plt.close()
-
 
 

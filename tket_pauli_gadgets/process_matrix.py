@@ -1,5 +1,5 @@
 from Pauli import get_diracs, X, Y, Z, one_qubit_diracs
-from common_gates import multi_qubit_matrix, H, S, V, cnot, Rx, Ry, Rz, U1, U3, cnot12, cnot21
+from common_gates import multi_qubit_matrix, H, S, V, cnot, Rx, Ry, Rz, U1, U3, cnot12, cnot21, swap
 from pytket import OpType
 import numpy as np
 import math
@@ -37,6 +37,7 @@ class ProcessMatrixFinder:
             [self.get_single_qubit_noise_process(c) for c in one_qubit_noise_channels], default_size=4)
         self.cnot_processes = {(i, j): self.get_cnot_process_matrix(i, j)
                                for i in range(self.n_qubits) for j in range(self.n_qubits) if i != j}
+        self.swap_processes = dict()
 
     def matrix_list_product(self, matrices, default_size=None):
         if len(matrices) == 0:
@@ -114,6 +115,16 @@ class ProcessMatrixFinder:
             z = np.kron(np.kron(np.eye(4 ** qubit), little_process), np.eye(4 ** (self.n_qubits - qubit - 1)))
         self.process_cache.update({s: z})
         return z
+
+    def get_swap_process_matrix(self, i, j):
+        if (i, j) in self.swap_processes:
+            return self.swap_processes[(i, j)]
+        elif (j, i) in self.swap_processes:
+            return self.swap_processes[(j, i)]
+        else:
+            p = self.unitary_to_process_matrix(swap(i, j, self.n_qubits))
+            self.swap_processes[(i, j)] = p
+            return p
 
     def unitary_to_process_matrix(self, unitary):
         return np.vstack([[np.einsum('ij,ji->', unitary @ d2 @ unitary.transpose().conjugate(), d1, optimize=True) / (2 ** self.n_qubits)
