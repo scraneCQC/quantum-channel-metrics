@@ -4,16 +4,13 @@ from tket_pauli_gadgets.chem import get_circuit
 import numpy as np
 from pytket.qiskit import tk_to_dagcircuit
 from qiskit.converters.dag_to_circuit import dag_to_circuit
-from pytket import Circuit, Transform, OpType
 import matplotlib.pyplot as plt
-import math
 
-"".split()
+
 np.set_printoptions(edgeitems=10, linewidth=1000)
 
 amplification = 2000
 single_noise, cnot_noise = channels(amplification=amplification)
-single_noise, cnot_noise = [], []
 params = [1.69252673e-07, 5.74166793e-02]
 
 circ = get_circuit(params, 13)

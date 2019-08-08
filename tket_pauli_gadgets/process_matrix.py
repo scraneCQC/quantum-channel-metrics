@@ -1,25 +1,10 @@
-from Pauli import get_diracs, X, Y, Z, one_qubit_diracs
-from common_gates import multi_qubit_matrix, H, S, V, cnot, Rx, Ry, Rz, U1, U3, cnot12, cnot21, swap
+from Pauli import get_diracs, one_qubit_diracs
+from common_gates import cnot12, cnot21, swap
 from pytket import OpType
 import numpy as np
 import math
-from functools import reduce
 import scipy.sparse as sp
-
-
-matrices_no_params = {OpType.Z: lambda i, n: multi_qubit_matrix(Z, i[0], n),
-                      OpType.X: lambda i, n: multi_qubit_matrix(X, i[0], n),
-                      OpType.Y: lambda i, n: multi_qubit_matrix(Y, i[0], n),
-                      OpType.H: lambda i, n: multi_qubit_matrix(H, i[0], n),
-                      OpType.S: lambda i, n: multi_qubit_matrix(S, i[0], n),
-                      OpType.V: lambda i, n: multi_qubit_matrix(V, i[0], n),
-                      OpType.CX: lambda i, n: cnot(i[0], i[1], n)}
-
-matrices_with_params = {OpType.Rx: lambda i, n, params: Rx(params[0], i[0], n),
-                        OpType.Ry: lambda i, n, params: Ry(params[0], i[0], n),
-                        OpType.Rz: lambda i, n, params: Rz(params[0], i[0], n),
-                        OpType.U1: lambda i, n, params: U1(params[0], i[0], n),
-                        OpType.U3: lambda i, n, params: U3(params[0], params[1], params[2], i[0], n)}
+from tket_pauli_gadgets.converter import matrices_no_params, matrices_with_params, converter
 
 
 class ProcessMatrixFinder:
@@ -31,20 +16,13 @@ class ProcessMatrixFinder:
         self.d2 = 4 ** n_qubits
         self.basic_cnot_processes = {1: self.get_adjacent_cnot_process_matrix(0, 1),
                                      -1: self.get_adjacent_cnot_process_matrix(1, 0)}
-        self.cnot_noise_process = self.matrix_list_product(
+        self.cnot_noise_process = converter.matrix_list_product(
             [self.get_two_qubit_noise_process(c) for c in cnot_noise_channels], default_size=16)
-        self.single_qubit_gate_noise_process = self.matrix_list_product(
+        self.single_qubit_gate_noise_process = converter.matrix_list_product(
             [self.get_single_qubit_noise_process(c) for c in one_qubit_noise_channels], default_size=4)
         self.cnot_processes = {(i, j): self.get_cnot_process_matrix(i, j)
                                for i in range(self.n_qubits) for j in range(self.n_qubits) if i != j}
         self.swap_processes = dict()
-
-    def matrix_list_product(self, matrices, default_size=None):
-        if len(matrices) == 0:
-            if default_size is None:
-                default_size = 2 ** self.n_qubits
-            return np.eye(default_size)
-        return reduce(lambda x, y: x @ y, matrices, np.eye(matrices[0].shape[0]))
 
     def get_adjacent_cnot_process_matrix(self, control, target):
         if target == control + 1:

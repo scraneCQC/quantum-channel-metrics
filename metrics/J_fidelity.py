@@ -86,7 +86,8 @@ def angle(channel: Iterable[np.ndarray], unitary: np.ndarray) -> float:
 
 
 def bures(channel: Iterable[np.ndarray], unitary: np.ndarray) -> float:
-    return (2 - 2 * f_pro(channel, unitary) ** 0.5) ** 0.5
+    f = max(0, f_pro(channel, unitary))
+    return (2 - 2 * f ** 0.5) ** 0.5
 
 
 def C(channel: Iterable[np.ndarray], unitary: np.ndarray) -> float:  # That's the only name they give it

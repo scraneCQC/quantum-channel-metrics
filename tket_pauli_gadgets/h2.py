@@ -2,14 +2,13 @@ from openfermion.utils._unitary_cc import uccsd_singlet_generator
 from openfermion.transforms import jordan_wigner
 from openfermion import QubitOperator
 #from tket_pauli_gadgets.noise_models import channels
-from pytket import OpType, Circuit
-from common_gates import multi_qubit_matrix, cnot, X, Y, Z, H, S, V, Rx, Ry, Rz, U1, U3
-import math
+from common_gates import X, Y, Z
 import numpy as np
-from functools import reduce
 from tket_pauli_gadgets.chem import get_circuit
 import scipy.optimize
 import matplotlib.pyplot as plt
+import matplotlib.cm as cm
+from tket_pauli_gadgets.converter import converter
 
 
 #single_noise, cnot_noise = channels(amplification=1000)
@@ -17,44 +16,8 @@ import matplotlib.pyplot as plt
 np.set_printoptions(edgeitems=10, linewidth=1000)
 
 
-matrices_no_params = {OpType.Z: lambda i, n: multi_qubit_matrix(Z, i[0], n),
-                      OpType.X: lambda i, n: multi_qubit_matrix(X, i[0], n),
-                      OpType.Y: lambda i, n: multi_qubit_matrix(Y, i[0], n),
-                      OpType.H: lambda i, n: multi_qubit_matrix(H, i[0], n),
-                      OpType.S: lambda i, n: multi_qubit_matrix(S, i[0], n),
-                      OpType.V: lambda i, n: multi_qubit_matrix(V, i[0], n),
-                      OpType.CX: lambda i, n: cnot(i[0], i[1], n)}
-
-matrices_with_params = {OpType.Rx: lambda i, n, params: Rx(params[0], i[0], n),
-                        OpType.Ry: lambda i, n, params: Ry(params[0], i[0], n),
-                        OpType.Rz: lambda i, n, params: Rz(params[0], i[0], n),
-                        OpType.U1: lambda i, n, params: U1(params[0], i[0], n),
-                        OpType.U3: lambda i, n, params: U3(params[0], params[1], params[2], i[0], n)}
-
-
 n_qubits = 4
-
-
-def matrix_list_product(matrices, default_size=None):
-    if len(matrices) == 0:
-        if default_size is None:
-            default_size = 2 ** n_qubits
-        return np.eye(default_size)
-    return reduce(lambda x, y: x @ y, matrices, np.eye(matrices[0].shape[0]))
-
-def instruction_to_unitary(instruction):
-    t = instruction.op.get_type()
-    if t in matrices_no_params:
-        return matrices_no_params[t](instruction.qubits, n_qubits)
-    elif t in matrices_with_params:
-        return matrices_with_params[t](instruction.qubits, n_qubits,
-                                       [p * math.pi for p in instruction.op.get_params()])
-    else:
-        raise ValueError("Unexpected instruction", instruction)
-
-
-def circuit_to_unitary(circuit):
-    return matrix_list_product([instruction_to_unitary(i) for i in circuit.get_commands()[::-1]])
+converter.n_qubits = n_qubits
 
 
 def get_expectation(pauli, density):
@@ -104,17 +67,19 @@ def get_energy(packed_amplitudes):
              ((0, 'Y'), (1, 'X'), (2, 'X'), (3, 'Y')): 0.045442884149313106,
              ((0, 'Y'), (1, 'Y'), (2, 'X'), (3, 'X')): - 0.045442884149313106}
 
-    u = circuit_to_unitary(circuit)
+    u = converter.circuit_to_unitary(circuit)
     start_density = np.zeros((2 ** n_qubits, 2 ** n_qubits))
     start_density[0][0] = 1
     end_density = u @ start_density @ u.transpose().conjugate()
 
     return sum([terms[pauli] * get_expectation(pauli, end_density) for pauli in terms]).real
 
+
 plt.figure()
-ps = [x / 100 - 1 for x in range(400)]
-plt.plot([p / math.pi for p in ps], [get_energy((0, p)) for p in ps])
-plt.savefig("../graphs/energy.png")
+ps = [x / 20 - 2.5 for x in range(100)]
+plt.imsave("../graphs/energy_grid.png", [[get_energy((p1, p2)) for p2 in ps] for p1 in ps], cmap=cm.gist_rainbow)
+# plt.plot([p1 / math.pi for p1 in ps], [get_energy((0, p1)) for p1 in ps])
+# plt.savefig("../graphs/energy_grid_0.png")
 plt.close()
 params = [1, 0.5]
 res = scipy.optimize.minimize(get_energy, params)
