@@ -9,6 +9,7 @@ import scipy.optimize
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 from tket_pauli_gadgets.converter import converter
+import math
 
 
 #single_noise, cnot_noise = channels(amplification=1000)
@@ -74,6 +75,10 @@ def get_energy(packed_amplitudes):
 
     return sum([terms[pauli] * get_expectation(pauli, end_density) for pauli in terms]).real
 
+
+print(get_energy((math.pi, 0.05)))
+
+quit()
 
 plt.figure()
 ps = [x / 20 - 2.5 for x in range(100)]

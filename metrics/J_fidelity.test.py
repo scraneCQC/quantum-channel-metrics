@@ -3,6 +3,20 @@ from noise import *
 import math
 from Pauli import *
 from metrics.density_runner import ops
+import matplotlib.pyplot as plt
+
+
+ps = [x / 100 for x in range(1, 100)]
+ds = []
+d2 = []
+for p in ps:
+    d2.append(bures(amplitude_damping_channel(p), np.eye(2)))
+    if len(d2) >= 2:
+        ds.append((d2[-1] - d2[-2]) * 100)
+plt.plot(ps, d2)
+plt.plot(ps[:98], ds)
+plt.savefig("../graphs/amp distance")
+quit()
 
 
 print(f_pro(identity_channel(2), np.eye(4)))
@@ -58,3 +72,4 @@ for name, mat in ops.items():
     print("actual ", f_pro_experimental(name, U))
     print("simulated ", f_pro_simulated(name, U))
     print()
+

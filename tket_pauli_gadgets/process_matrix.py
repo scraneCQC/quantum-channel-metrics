@@ -110,29 +110,29 @@ class ProcessMatrixFinder:
 
     def instructions_to_process_matrix(self, instructions):
         s = "".join([str(inst) for inst in instructions])
-        if s in self.process_cache:
-            return self.process_cache[s]
-        l = len(instructions)
-        for i in range(len(instructions)):
-            end = "".join([str(inst) for inst in instructions[i:]])
-            if end in self.process_cache:
-                m = self.process_cache[end] @ self.instructions_to_process_matrix(instructions[:i])
-                if l < 5:
-                    self.process_cache.update({s: m})
-                return m
-            beginning = "".join([str(inst) for inst in instructions[:(l - i)]])
-            if beginning in self.process_cache:
-                m = self.instructions_to_process_matrix(instructions[(l - i):]) @ self.process_cache[beginning]
-                if l < 5:
-                    self.process_cache.update({s: m})
-                return m
+        #if s in self.process_cache:
+        #    return self.process_cache[s]
+        #l = len(instructions)
+        #for i in range(len(instructions)):
+        #    end = "".join([str(inst) for inst in instructions[i:]])
+        #    if end in self.process_cache:
+        #        m = self.process_cache[end] @ self.instructions_to_process_matrix(instructions[:i])
+        #        if l < 5:
+        #            self.process_cache.update({s: m})
+        #        return m
+        #    beginning = "".join([str(inst) for inst in instructions[:(l - i)]])
+        #    if beginning in self.process_cache:
+        #        m = self.instructions_to_process_matrix(instructions[(l - i):]) @ self.process_cache[beginning]
+        #        if l < 5:
+        #            self.process_cache.update({s: m})
+        #        return m
         m = np.eye(self.d2)
         for inst in instructions:
             if inst.op.get_type() == OpType.CX:
                 m = self.cnot_processes[tuple(inst.qubits)] @ m
             else:
                 m = self.get_single_qubit_gate_process_matrix(inst) @ m
-        if l < 5:
-            self.process_cache.update({s: m})
+        #if l < 5:
+        #    self.process_cache.update({s: m})
         return m
 

@@ -55,7 +55,7 @@ def angle(channel1: Iterable[np.ndarray], channel2: Iterable[np.ndarray]) -> flo
 
 
 def bures(channel1: Iterable[np.ndarray], channel2: Iterable[np.ndarray]) -> float:
-    return (2 - 2 * f_min(channel1, channel2, 100) ** 0.5) ** 0.5
+    return (2 - 2 * f_min(channel1, channel2, 1000) ** 0.5) ** 0.5
 
 
 def C(channel1: Iterable[np.ndarray], channel2: Iterable[np.ndarray]) -> float:  # That's the only name they give it

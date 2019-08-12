@@ -2,6 +2,16 @@ from metrics.S_fidelity import *
 from noise import *
 import math
 from metrics.density_runner import ops
+import matplotlib.pyplot as plt
+
+
+ps = [x / 100 for x in range(101)]
+ds = []
+for p in ps:
+    ds.append(bures(amplitude_damping_channel(p ** 2), [np.eye(2)]))
+plt.plot(ps, ds)
+plt.savefig("../graphs/amp distance")
+quit()
 
 
 print([np.trace(rho) for rho in random_densities(2, 10)])

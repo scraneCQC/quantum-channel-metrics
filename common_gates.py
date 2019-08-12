@@ -194,6 +194,7 @@ def random_unitary():
     phi1 = random.random() * math.pi * 2
     phi2 = random.random() * math.pi * 2
     theta = random.random() * math.pi * 2
+    print(phi1 / math.pi, phi2 / math.pi, theta / math.pi)
     c = math.cos(theta)
     s = math.sin(theta)
     e1 = cmath.exp(complex(0, phi1))

@@ -7,7 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-single_noise, cnot_noise = channels(amplification=1)
+single_noise, cnot_noise = channels(amplification=10)
 
 
 def run(n_qubits):
@@ -89,16 +89,27 @@ def get_opt_fid(s: str, angle: float, rewriter: RewriteTket):
 
 def plot_angles(s):
     rewriter = RewriteTket(Circuit(len(s)), single_noise, cnot_noise, verbose=False)
+    beginning = Circuit(len(s))
+    end = Circuit(len(s))
+    for _ in range(5):
+        beginning = beginning >> random_pauli_gadget(len(s))
+        end = end >> random_pauli_gadget(len(s))
     angles = [2 * i / 100 for i in range(101)]
-    fidelities = [get_fid(s, a, rewriter) for a in angles]
-    opt_fidelities = [get_opt_fid(s, a, rewriter) for a in angles]
+    fidelities = []
+    opt_fidelities = []
+    for a in angles:
+        print(a)
+        rewriter.set_circuit_and_target(beginning >> pauli_gadget(a, s, len(s)) >> end)
+        f = rewriter.reduce()
+        fidelities.append(f[0])
+        opt_fidelities.append(f[1])
     plt.figure()
     line_orig, = plt.plot(angles, fidelities)
     line_reduced, = plt.plot(angles, opt_fidelities)
-    plt.xlabel("alpha (multiples of pi)")
-    plt.ylabel("fidelity of " + s + " gadget")
-    plt.legend((line_orig, line_reduced), ("original", "optimized"), loc="upper left", bbox_to_anchor=(0.14, 0.95))
-    plt.savefig("graphs/gadget_" + s + "_ibm_noise_model.png")
+    plt.xlabel(r"$\alpha$ (multiples of $\pi$)")
+    plt.ylabel("Fidelity of " + s + " gadget")
+    plt.legend((line_orig, line_reduced), ("Original", "Rounded"), loc="upper left", bbox_to_anchor=(0.14, 0.95))
+    plt.savefig("graphs/gadget_" + s + "_ibm_noise_model_reduced_middle.png")
     plt.close()
 
 

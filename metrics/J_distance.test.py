@@ -1,6 +1,16 @@
 from metrics.J_distance import *
 from noise import *
 import math
+import matplotlib.pyplot as plt
+
+
+ps = [x / 100 for x in range(100)]
+ds = []
+for p in ps:
+    ds.append(j_distance([np.eye(2)], amplitude_damping_channel(p)))
+plt.plot(ps, ds)
+plt.savefig("../graphs/amp distance")
+quit()
 
 
 print(j_distance([np.kron(X, X)], identity_channel(2)))

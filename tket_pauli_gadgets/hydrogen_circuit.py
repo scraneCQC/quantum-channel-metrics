@@ -9,21 +9,28 @@ import matplotlib.pyplot as plt
 
 np.set_printoptions(edgeitems=10, linewidth=1000)
 
-amplification = 2000
+amplification = 10
 single_noise, cnot_noise = channels(amplification=amplification)
-params = [1.69252673e-07, 5.74166793e-02]
+params = [0, 0.05]
 
 circ = get_circuit(params, 13)
-rewriter = RewriteTket(circ, single_noise, cnot_noise, verbose=True)
+rewriter = RewriteTket(circ, single_noise, cnot_noise, verbose=False)
 
 fid_none = []
 fid_tket = []
 fid_opt = []
+fid_rand = []
 
 for i in range(13):
     print(i)
     short_circ = get_circuit(params, i)
-    fid_none.append(rewriter.fidelity(short_circ.get_commands()))
+    rewriter.set_circuit(short_circ.copy())
+    rewriter.original_fidelity = rewriter.fidelity(rewriter.instructions)
+    fid_none.append(rewriter.original_fidelity)
+    for i in range(short_circ.n_gates):
+        for j in range(3):
+            rewriter.random_angle(i, j, 0.02)
+    fid_rand.append(rewriter.fidelity(rewriter.instructions))
     rewriter.set_circuit(short_circ)
     f = rewriter.reduce()
     fid_tket.append(f[0])
@@ -34,6 +41,7 @@ plt.figure()
 plt.plot(fid_none, label="no optimization")
 plt.plot(fid_tket, label="tket")
 plt.plot(fid_opt, label="tket + small angle")
+plt.plot(fid_rand, label="random phases on gadgets")
 plt.xlabel("Number of Pauli gadgets")
 plt.ylabel("Fidelity")
 plt.legend()
