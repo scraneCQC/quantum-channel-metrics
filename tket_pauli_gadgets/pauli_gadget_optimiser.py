@@ -1,10 +1,12 @@
 from tket_pauli_gadgets.pauli_gadgets import random_pauli_gadget, pauli_gadget, random_gadget_circuit
 from tket_pauli_gadgets.tket_circuit_rewriter import RewriteTket, cleanup
 from pytket import Transform, Circuit
+from pytket.backends.ibm import AerBackend
 from noise import phase_damping_channel
-from tket_pauli_gadgets.noise_models import channels
+from tket_pauli_gadgets.noise_models import channels, amplified_qiskit_model
 import numpy as np
 import matplotlib.pyplot as plt
+from metrics.J_fidelity import f_pro_simulated
 
 
 single_noise, cnot_noise = channels(amplification=10)
@@ -89,27 +91,25 @@ def get_opt_fid(s: str, angle: float, rewriter: RewriteTket):
 
 def plot_angles(s):
     rewriter = RewriteTket(Circuit(len(s)), single_noise, cnot_noise, verbose=False)
-    beginning = Circuit(len(s))
-    end = Circuit(len(s))
-    for _ in range(5):
-        beginning = beginning >> random_pauli_gadget(len(s))
-        end = end >> random_pauli_gadget(len(s))
-    angles = [2 * i / 100 for i in range(101)]
+    backend = AerBackend(amplified_qiskit_model("ibmqx4"))
+    angles = [2 * i / 10 for i in range(11)]
     fidelities = []
     opt_fidelities = []
     for a in angles:
         print(a)
-        rewriter.set_circuit_and_target(beginning >> pauli_gadget(a, s, len(s)) >> end)
-        f = rewriter.reduce()
-        fidelities.append(f[0])
-        opt_fidelities.append(f[1])
+        #rewriter.set_circuit_and_target(pauli_gadget(a, s, len(s)))
+        #f = rewriter.reduce()
+        circ = pauli_gadget(a, s, len(s))
+        fidelities.append(f_pro_simulated(circ, rewriter.target, backend))
+        rewriter.set_circuit_and_target(circ)
+        opt_fidelities.append(f_pro_simulated(rewriter.circuit, rewriter.target, backend))
     plt.figure()
     line_orig, = plt.plot(angles, fidelities)
-    line_reduced, = plt.plot(angles, opt_fidelities)
+    line_reduced, = plt.plot(angles, opt_fidelities, r'--')
     plt.xlabel(r"$\alpha$ (multiples of $\pi$)")
     plt.ylabel("Fidelity of " + s + " gadget")
     plt.legend((line_orig, line_reduced), ("Original", "Rounded"), loc="upper left", bbox_to_anchor=(0.14, 0.95))
-    plt.savefig("graphs/gadget_" + s + "_ibm_noise_model_reduced_middle.png")
+    plt.savefig("graphs/gadget_" + s + "_ibm_noise_model_reduced_simulated.png")
     plt.close()
 
 

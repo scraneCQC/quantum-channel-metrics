@@ -1,6 +1,6 @@
 from Pauli import *
 import math
-from metrics.approximation_runner import get_pauli_expectation_v3
+from metrics.approximation_runner import get_pauli_expectation
 from metrics import density_runner
 from metrics.density_runner import apply_channel
 from pytket import Circuit
@@ -8,12 +8,13 @@ from itertools import product
 from typing import Iterable, Any, Dict, Optional
 from pytket.backends import Backend
 
+one_qubit_state_basis = [I1, I1 + X, I1 + Y, I1 + Z]
+
 
 def f_pro(channel: Iterable[np.ndarray], unitary: np.ndarray) -> float:
     dim = channel[0].shape[0]
     n_qubits = int(math.log(dim, 2))  # please don't give me qudits, the Pauli's aren't nice
     u_basis = get_diracs(n_qubits)
-    one_qubit_state_basis = [I1, I1 + X, I1 + Y, I1 + Z]
     state_basis = one_qubit_state_basis
     for _ in range(n_qubits - 1):
         state_basis = [np.kron(x, y) for x in state_basis for y in one_qubit_state_basis]
@@ -30,7 +31,6 @@ def f_pro_experimental(circuit_string: Iterable[Any], unitary: np.ndarray, noise
     dim = unitary.shape[0]
     n_qubits = int(math.log(dim, 2))
     u_basis = get_diracs(n_qubits)
-    one_qubit_state_basis = [I1, I1 + X, I1 + Y, I1 + Z]
     state_basis = one_qubit_state_basis
     for _ in range(n_qubits - 1):
         state_basis = [np.kron(x, y) for x in state_basis for y in one_qubit_state_basis]
@@ -44,31 +44,38 @@ def f_pro_experimental(circuit_string: Iterable[Any], unitary: np.ndarray, noise
     return 1 / dim ** 3 * sum(expectations)
 
 
+dim = 8
+n_qubits = 3
+u_basis = get_diracs(n_qubits)
+state_basis = one_qubit_state_basis
+one_qubit_a = np.array([[1, 0, 0, 1], [-1, 2, 0, -1], [-1, 0, 2, -1], [-1, 0, 0, 1]])
+a = one_qubit_a
+for _ in range(n_qubits - 1):
+    state_basis = [np.kron(x, y) for x in state_basis for y in one_qubit_state_basis]
+    a = np.kron(a, one_qubit_a)
+sigmas = get_diracs(n_qubits)
+
+one_qubit_preps = [(lambda i, c: c.X(i)), (lambda i, c: c.H(i)), (lambda i, c: c.Rx(i, -0.5)), (lambda i, c: None)]
+
+
+def prepare_state(single_qubit_states):
+    circuit = Circuit(n_qubits)
+    for i in range(len(single_qubit_states)):
+        one_qubit_preps[single_qubit_states[i]](i, circuit)
+    return circuit
+
+
+preps = [prepare_state(t) for t in product([0, 1, 2, 3], repeat=n_qubits)]
+
+
 def f_pro_simulated(circuit: Circuit, unitary: np.ndarray, backend: Backend) -> float:
-    dim = unitary.shape[0]
-    n_qubits = int(math.log(dim, 2))
-    u_basis = get_diracs(n_qubits)
-    one_qubit_state_basis = [I1, I1 + X, I1 + Y, I1 + Z]
-    state_basis = one_qubit_state_basis
-    one_qubit_a = np.array([[1, 0, 0, 1], [-1, 2, 0, -1], [-1, 0, 2, -1], [-1, 0, 0, 1]])
-    a = one_qubit_a
-    for _ in range(n_qubits - 1):
-        state_basis = [np.kron(x, y) for x in state_basis for y in one_qubit_state_basis]
-        a = np.kron(a, one_qubit_a)
-    sigmas = get_diracs(n_qubits)
     b = np.array([[np.trace(unitary @ u_basis[j] @ unitary.transpose().conjugate() @ sigmas[l]) / dim for l in range(dim ** 2)] for j in range(dim ** 2)])
     m = a.transpose() @ b
-    one_qubit_preps = [(lambda i, c: c.X(i)), (lambda i, c: c.H(i)), (lambda i, c: c.Rx(i, -0.5)), (lambda i, c: None)]
-    def prepare_state(single_qubit_states):
-        circuit = Circuit(n_qubits)
-        for i in range(len(single_qubit_states)):
-            one_qubit_preps[single_qubit_states[i]](i, circuit)
-        return circuit
-    preps = [prepare_state(t) for t in product([0, 1, 2, 3], repeat=n_qubits)]
     expectations = np.zeros((dim ** 2, dim ** 2))
     for k, l in list(product(range(dim ** 2), range(dim ** 2))):
-        s = list(product("IXYZ", repeat=n_qubits))
-        expectations[l][k] = get_pauli_expectation_v3(circuit, preps[k], "".join(s[l]), backend, shots=int(1)) * dim
+        if m[l][k] > 1e-5:
+            s = list(product("IXYZ", repeat=n_qubits))
+            expectations[l][k] = get_pauli_expectation(circuit, preps[k], "".join(s[l]), backend, shots=8192) * dim
     return 1 / dim ** 3 * sum(expectations[k][l] * m[l][k] for l in range(dim ** 2) for k in range(dim ** 2)).real
 
 

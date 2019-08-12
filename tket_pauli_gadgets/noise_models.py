@@ -34,9 +34,6 @@ def amplified_qiskit_model(name, amplification=1, gate_time=0.001):
     phase_gamma = 1 - np.exp(-t2_ratio)
     phase_error = phase_damping_error(phase_gamma)
 
-    print(ave_cnot_error)
-    print(ave_single_error, amp_gamma, phase_gamma)
-
     total_error = single_depol_error.compose(amp_error.compose(phase_error))
     noise_model.add_all_qubit_quantum_error(total_error, ['u1', 'u2', 'u3'])
 

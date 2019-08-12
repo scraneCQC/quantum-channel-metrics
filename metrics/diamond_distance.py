@@ -18,11 +18,6 @@ def random_state(dim: int) -> np.ndarray:
     return c / (squared_modulus ** 0.5)
 
 
-def density_matrix_to_fano(rho: np.ndarray):
-    # TODO: work for higher dimensions than 2
-    return [np.trace(rho @ dirac) for dirac in one_qubit_diracs]
-
-
 def pure_density_from_state(state: np.ndarray) -> np.ndarray:
     return np.outer(state.conjugate(), state)
 

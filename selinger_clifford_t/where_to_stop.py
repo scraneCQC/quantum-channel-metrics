@@ -9,20 +9,20 @@ from typing import Any, Iterable
 from noise import standard_noise_channels
 
 
-def plot_distances(circuits: Iterable[Iterable[Any]], U: np.ndarray, noise_strength: float):
+def plot_distances(circuits: Iterable[Iterable[Any]], unitary: np.ndarray, noise_strength: float):
     max_acc = len(circuits)
 
     noise_channels = standard_noise_channels(noise_strength)
 
     start = time.time()
-    J_fidelities = [(2 - 2 * J_fidelity.f_pro_experimental(c, U, noise_channels) ** 0.5) ** 0.5 for c in circuits]
+    J_fidelities = [(2 - 2 * J_fidelity.f_pro_experimental(c, unitary, noise_channels) ** 0.5) ** 0.5 for c in circuits]
     end = time.time()
     print("The best accuracy for J fidelity was: " + str(min(range(max_acc), key=lambda x: J_fidelities[x])))
     print("It took " + str(end-start) + " seconds")
     print()
 
     start = time.time()
-    J_distances = [J_distance.j_distance_experimental(c, U, noise_channels) for c in circuits]
+    J_distances = [J_distance.j_distance_experimental(c, unitary, noise_channels) for c in circuits]
     end = time.time()
     print("The best accuracy for J distance was: " + str(min(range(max_acc), key=lambda x: J_distances[x])))
     print("It took " + str(end-start) + " seconds")
@@ -31,7 +31,7 @@ def plot_distances(circuits: Iterable[Iterable[Any]], U: np.ndarray, noise_stren
 
     # This may take a few seconds
     start = time.time()
-    S_fidelities = [(2 - 2 * S_fidelity.experimental(c, U, 100, noise_channels) ** 0.5) ** 0.5
+    S_fidelities = [(2 - 2 * S_fidelity.experimental(c, unitary, 100, noise_channels) ** 0.5) ** 0.5
                     for c in circuits]
     end = time.time()
     print("The best accuracy for S was: " + str(min(range(max_acc), key=lambda x: S_fidelities[x])))
@@ -39,7 +39,7 @@ def plot_distances(circuits: Iterable[Iterable[Any]], U: np.ndarray, noise_stren
     print()
 
     start = time.time()
-    diamond_distances = [diamond_distance.monte_carlo_from_circuit(c, U, 1000, noise_channels) for c in circuits]
+    diamond_distances = [diamond_distance.monte_carlo_from_circuit(c, unitary, 100, noise_channels) for c in circuits]
     end = time.time()
     print("The best accuracy for diamond was: " + str(min(range(max_acc), key=lambda x: diamond_distances[x])))
     print("It took " + str(end - start) + " seconds")
@@ -95,7 +95,7 @@ def plot_fidelities(circuits: Iterable[Iterable[Any]], U: np.ndarray, noise_stre
     # print("It took " + str(end-start) + " seconds")
 
     plt.figure()
-    lineJ2, = plt.plot( J_noiseless)
+    lineJ2, = plt.plot(J_noiseless)
     lineJ, = plt.plot(J_fidelities)
     lineS, = plt.plot(S_fidelities)
 
@@ -107,18 +107,12 @@ def plot_fidelities(circuits: Iterable[Iterable[Any]], U: np.ndarray, noise_stre
 
 
 max_acc = 20
-
-
 theta = math.pi/3
-
-
 circuits = approximations.get_circuits(str(theta), max_accuracy=max_acc)
-# circuits = ["HH"*i for i in range(max_acc)]
 
 U = np.array([[complex(math.cos(theta / 2), - math.sin(theta / 2)), 0],
               [0, complex(math.cos(theta / 2), math.sin(theta / 2))]])
-# U = np.eye(2)
 
-# plot_distances(circuits, U, 1e-3)
-plot_fidelities(circuits, U, 1e-4)
+plot_distances(circuits, U, 1e-3)
+# plot_fidelities(circuits, U, 1e-4)
 
