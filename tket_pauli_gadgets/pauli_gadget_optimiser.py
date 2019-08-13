@@ -3,13 +3,15 @@ from tket_pauli_gadgets.tket_circuit_rewriter import RewriteTket, cleanup
 from pytket import Transform, Circuit
 from pytket.backends.ibm import AerBackend
 from noise import phase_damping_channel
-# from tket_pauli_gadgets.noise_models import channels, amplified_qiskit_model
+from tket_pauli_gadgets.noise_models import channels, amplified_qiskit_model
 import numpy as np
 import matplotlib.pyplot as plt
 from metrics.J_fidelity import f_pro_simulated
+from pytket.backends.ibm import IBMQBackend
 
 
-# single_noise, cnot_noise = channels(amplification=10)
+amplification = 1
+single_noise, cnot_noise = channels(amplification=amplification)
 
 
 def run(n_qubits):
@@ -90,15 +92,17 @@ def get_opt_fid(s: str, angle: float, rewriter: RewriteTket):
 
 
 def plot_angles(s):
-    rewriter = RewriteTket(Circuit(len(s)), [], [], verbose=False)
-    backend = AerBackend()  # amplified_qiskit_model("ibmqx4")
-    angles = [2 * i / 10 for i in range(11)]
+    rewriter = RewriteTket(Circuit(len(s)), single_noise, cnot_noise, verbose=False)
+    # backend = AerBackend(amplified_qiskit_model("ibmqx4", amplification=amplification))
+    backend = IBMQBackend("ibmq_5_tenerife")
+    angles = [2 * i / 20 for i in range(11)]
     fidelities = []
     opt_fidelities = []
     for a in angles:
         print(a)
-        filename1 = "metrics/data/c" + str(a) + ".txt"
-        filename2 = "metrics/data/rounded" + str(a) + ".txt"
+        filename1 = "metrics/data/actual_ibm/c" + str(a) + ".txt"
+        filename2 = "metrics/data/actual_ibm/rounded" + str(a) + ".txt"
+        # create files if they don't exist:
         with open(filename1, "a+") as file:
             pass
         with open(filename2, "a+") as file:
@@ -119,7 +123,7 @@ def plot_angles(s):
     plt.xlabel(r"$\alpha$ (multiples of $\pi$)")
     plt.ylabel("Fidelity of " + s + " gadget")
     plt.legend((line_orig, line_reduced), ("Original", "Rounded"), loc="upper left", bbox_to_anchor=(0.14, 0.95))
-    plt.savefig("graphs/gadget_" + s + "_ibm_noise_model_reduced_simulated.png")
+    plt.savefig("graphs/gadget_" + s + "_ibm.png")
     plt.close()
 
 

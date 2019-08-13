@@ -26,8 +26,7 @@ final_circuits["Y"].Sdg(0)
 final_circuits["Y"].H(0)
 
 
-def get_pauli_expectation(c: Circuit, initial_circuit: Circuit, pauli_string: str, backend, *,
-                          shots: int = 100) -> float:
+def get_pauli_expectation(c: Circuit, initial_circuit: Circuit, pauli_string: str, backend, shots: int = 100) -> float:
     n_qubits = len(pauli_string)
     circuit = initial_circuit.copy()
     circuit.add_circuit(c.copy(), list(range(n_qubits)))
