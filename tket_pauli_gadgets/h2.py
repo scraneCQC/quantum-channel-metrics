@@ -17,7 +17,7 @@ import math
 np.set_printoptions(edgeitems=10, linewidth=1000)
 
 
-n_qubits = 4
+n_qubits = 3
 converter.n_qubits = n_qubits
 
 
@@ -39,7 +39,6 @@ def get_expectation(pauli, density):
         m = np.kron(m, n)
     expectation = np.einsum('ij,ji->', density, m)
     return expectation
-
 
 def get_energy(packed_amplitudes):
     fermion_generator = uccsd_singlet_generator(packed_amplitudes, 4, 2)

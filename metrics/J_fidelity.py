@@ -8,6 +8,7 @@ from itertools import product
 from typing import Iterable, Any, Dict, Optional
 from pytket.backends import Backend
 
+
 one_qubit_state_basis = [I1, I1 + X, I1 + Y, I1 + Z]
 
 
@@ -46,14 +47,18 @@ def f_pro_experimental(circuit_string: Iterable[Any], unitary: np.ndarray, noise
 
 dim = 8
 n_qubits = 3
-u_basis = get_diracs(n_qubits)
-state_basis = one_qubit_state_basis
+u_basis = np.array(get_diracs(n_qubits))
+state_basis = [(I1 - Z) / 2, (I1 + X) / 2, (I1 + Y) / 2, (I1 + Z) / 2]
+one_qubit_states = state_basis
 one_qubit_a = np.array([[1, 0, 0, 1], [-1, 2, 0, -1], [-1, 0, 2, -1], [-1, 0, 0, 1]])
 a = one_qubit_a
 for _ in range(n_qubits - 1):
-    state_basis = [np.kron(x, y) for x in state_basis for y in one_qubit_state_basis]
+    state_basis = [np.kron(x, y) for x in one_qubit_states for y in state_basis]
     a = np.kron(a, one_qubit_a)
-sigmas = get_diracs(n_qubits)
+state_basis = np.array(state_basis)
+sigmas = u_basis
+s = list(product("IXYZ", repeat=n_qubits))
+
 
 one_qubit_preps = [(lambda i, c: c.X(i)), (lambda i, c: c.H(i)), (lambda i, c: c.Rx(i, -0.5)), (lambda i, c: None)]
 
@@ -68,15 +73,34 @@ def prepare_state(single_qubit_states):
 preps = [prepare_state(t) for t in product([0, 1, 2, 3], repeat=n_qubits)]
 
 
-def f_pro_simulated(circuit: Circuit, unitary: np.ndarray, backend: Backend) -> float:
-    b = np.array([[np.trace(unitary @ u_basis[j] @ unitary.transpose().conjugate() @ sigmas[l]) / dim for l in range(dim ** 2)] for j in range(dim ** 2)])
-    m = a.transpose() @ b
-    expectations = np.zeros((dim ** 2, dim ** 2))
+def load_expectations_from_file(filename):
+    expectations = np.full((dim ** 2, dim ** 2), np.nan)
+    with open(filename) as file:
+        lines = file.readlines()
+    for line in lines:
+        d = line.split()
+        expectations[int(d[0])][int(d[1])] = float(d[2])
+    return expectations
+
+
+def save_expectations_to_file(filename, expectations: np.ndarray):
+    with open(filename, "w") as file:
+        file.writelines([str(l) + " " + str(k) + " " + str(expectations[l][k]) + " " + "".join(s[l]) + "\n"
+                         for l in range(dim ** 2) for k in range(dim ** 2) if not np.isnan(expectations[l][k])])
+
+
+def f_pro_simulated(circuit: Circuit, unitary: np.ndarray, backend: Backend, filename) -> float:
+    b = np.einsum('ab,jbc,dc,lda->lj', unitary, u_basis, unitary.conjugate(), sigmas, optimize=True) / dim
+    m = b @ a
+    expectations = load_expectations_from_file(filename)
     for k, l in list(product(range(dim ** 2), range(dim ** 2))):
-        if m[l][k] > 1e-5:
-            s = list(product("IXYZ", repeat=n_qubits))
-            expectations[l][k] = get_pauli_expectation(circuit, preps[k], "".join(s[l]), backend, shots=8192) * dim
-    return 1 / dim ** 3 * sum(expectations[k][l] * m[l][k] for l in range(dim ** 2) for k in range(dim ** 2)).real
+        if np.isnan(expectations[l][k]):
+            if abs(m[l][k]) > 1e-10:
+                expectations[l][k] = get_pauli_expectation(circuit, preps[k], "".join(s[l]), backend, shots=8192)
+        if k == l:
+            save_expectations_to_file(filename, expectations)
+    expectations = np.where(np.isnan(expectations), 0, expectations)
+    return 1 / dim ** 3 * np.einsum('lk,lk->', expectations, m).real
 
 
 def effect_of_noise(circuit_description: Iterable[Any], noise_channels: Iterable = [],  n_qubits: int = 1,
@@ -93,7 +117,7 @@ def angle(channel: Iterable[np.ndarray], unitary: np.ndarray) -> float:
 
 
 def bures(channel: Iterable[np.ndarray], unitary: np.ndarray) -> float:
-    f = max(0, f_pro(channel, unitary))
+    f = max(f_pro(channel, unitary), 0)
     return (1 - f ** 0.5) ** 0.5
 
 

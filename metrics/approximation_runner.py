@@ -1,5 +1,6 @@
 from pytket import Circuit
 from typing import Iterable, Any, List, Dict, Callable
+import math
 
 
 ops = {"S": lambda c: c.S(0),
@@ -28,13 +29,9 @@ final_circuits["Y"].H(0)
 def get_pauli_expectation(c: Circuit, initial_circuit: Circuit, pauli_string: str, backend, *,
                           shots: int = 100) -> float:
     n_qubits = len(pauli_string)
-    if pauli_string == "I" * n_qubits:
-        return 1
     circuit = initial_circuit.copy()
     circuit.add_circuit(c.copy(), list(range(n_qubits)))
-    for i in range(n_qubits):
-        circuit.add_circuit(final_circuits[pauli_string[i]].copy(), [i])
-    circuit.measure_all()
-    noisy_shots = backend.get_counts(circuit, shots)
-    return sum(v * (-1) ** sum(k) for k, v in noisy_shots.items())/shots
+    black_box_exp = backend.get_pauli_expectation_value(circuit,
+                [(i, pauli_string[i]) for i in range(len(pauli_string)) if pauli_string[i] != "I"], shots=shots).real
+    return black_box_exp
 

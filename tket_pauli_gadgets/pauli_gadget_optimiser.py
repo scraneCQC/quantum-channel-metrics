@@ -3,13 +3,13 @@ from tket_pauli_gadgets.tket_circuit_rewriter import RewriteTket, cleanup
 from pytket import Transform, Circuit
 from pytket.backends.ibm import AerBackend
 from noise import phase_damping_channel
-from tket_pauli_gadgets.noise_models import channels, amplified_qiskit_model
+# from tket_pauli_gadgets.noise_models import channels, amplified_qiskit_model
 import numpy as np
 import matplotlib.pyplot as plt
 from metrics.J_fidelity import f_pro_simulated
 
 
-single_noise, cnot_noise = channels(amplification=10)
+# single_noise, cnot_noise = channels(amplification=10)
 
 
 def run(n_qubits):
@@ -90,19 +90,29 @@ def get_opt_fid(s: str, angle: float, rewriter: RewriteTket):
 
 
 def plot_angles(s):
-    rewriter = RewriteTket(Circuit(len(s)), single_noise, cnot_noise, verbose=False)
-    backend = AerBackend(amplified_qiskit_model("ibmqx4"))
+    rewriter = RewriteTket(Circuit(len(s)), [], [], verbose=False)
+    backend = AerBackend()  # amplified_qiskit_model("ibmqx4")
     angles = [2 * i / 10 for i in range(11)]
     fidelities = []
     opt_fidelities = []
     for a in angles:
         print(a)
+        filename1 = "metrics/data/c" + str(a) + ".txt"
+        filename2 = "metrics/data/rounded" + str(a) + ".txt"
+        with open(filename1, "a+") as file:
+            pass
+        with open(filename2, "a+") as file:
+            pass
         #rewriter.set_circuit_and_target(pauli_gadget(a, s, len(s)))
         #f = rewriter.reduce()
         circ = pauli_gadget(a, s, len(s))
-        fidelities.append(f_pro_simulated(circ, rewriter.target, backend))
-        rewriter.set_circuit_and_target(circ)
-        opt_fidelities.append(f_pro_simulated(rewriter.circuit, rewriter.target, backend))
+        rewriter.set_circuit_and_target(circ.copy())
+        cleanup.apply(circ)
+        fidelities.append(f_pro_simulated(circ.copy(), rewriter.target, backend, filename1))
+        print(fidelities[-1])
+        rewriter.reduce()
+        opt_fidelities.append(f_pro_simulated(rewriter.circuit.copy(), rewriter.target, backend, filename2))
+        print(opt_fidelities[-1])
     plt.figure()
     line_orig, = plt.plot(angles, fidelities)
     line_reduced, = plt.plot(angles, opt_fidelities, r'--')
