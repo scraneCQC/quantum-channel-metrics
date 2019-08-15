@@ -4,6 +4,8 @@ from itertools import product
 from pytket import Circuit
 import common_gates as gates
 from tket_pauli_gadgets.converter import converter
+from pytket.qiskit import tk_to_dagcircuit
+from qiskit.converters.dag_to_circuit import dag_to_circuit
 
 
 def suggest_cnot_unitary(unitary):
@@ -92,8 +94,28 @@ def function_to_mnots(f, n_qubits):
     return desc
 
 
-def mnots_to_cnot_template():
-    pass
+def mnot_template(n_controls):
+    if n_controls == 0:
+        return Circuit(1)
+    c1 = Circuit(2)
+    c1.CX(0, 1)
+    if n_controls == 1:
+        return c1
+    c2 = Circuit(3)
+    c2.CX(1, 2)
+    c2.CX(0, 1)
+    c2.CX(1, 2)
+    c2.CX(0, 1)
+    c2.CX(0, 2)
+    circs = [c1, c2]
+    for i in range(3, n_controls + 1):
+        c = Circuit(i + 1)
+        c.CX(i - 1, i)
+        c.add_circuit(circs[-1], list(range(i)))
+        c.add_circuit(circs[-1], list(range(i)))
+        c.CX(i - 1, i)
+        circs.append(c)
+    return circs[-1]
 
 
 def greedy(f, n_qubits):
