@@ -97,6 +97,7 @@ def f_pro_simulated(circuit: Circuit, unitary: np.ndarray, backend: Backend, fil
         if np.isnan(expectations[l][k]):
             if abs(m[l][k]) > 1e-5:
                 expectations[l][k] = get_pauli_expectation(circuit, preps[k], "".join(s[l]), backend, shots=8192)
+                save_expectations_to_file(filename, expectations)
         if k == l:
             save_expectations_to_file(filename, expectations)
     expectations = np.where(np.isnan(expectations), 0, expectations)

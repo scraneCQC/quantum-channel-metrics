@@ -51,7 +51,7 @@ def effect_of_noise(circuit_description: Iterable[Any], noise_channels: Iterable
                       circuit_to_jamiolkowski(circuit_description, circuit_key, n_qubits=n_qubits))
 
 
-def distance_noisy_run(circuit1, circuit2, noise_channels, key, n_qubits = 1):
+def distance_noisy_run(circuit1, circuit2, noise_channels, key, n_qubits=1):
     return trace_norm(
         circuit_to_jamiolkowski(circuit1, key, n_qubits=n_qubits, noise_channels=noise_channels),
         circuit_to_jamiolkowski(circuit2, key, n_qubits=n_qubits, noise_channels=noise_channels))

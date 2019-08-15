@@ -70,3 +70,4 @@ def channels(amplification=1, gate_time=0.001):
     cnot_channel = noise.channels(ave_cnot_error, amp_gamma, phase_gamma, 2)
 
     return singles_channel, cnot_channel
+

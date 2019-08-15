@@ -1,4 +1,5 @@
-from functools import reduce
+from functools import reduce4
+
 from typing import Iterable, Dict
 from Pauli import *
 from caching_runner import CachingRunner

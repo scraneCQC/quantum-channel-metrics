@@ -5,6 +5,8 @@ import random
 from typing import Dict
 from scipy.linalg import block_diag
 from Pauli import X, Y, Z
+from functools import reduce
+from scipy.stats import unitary_group
 
 
 cnot12 = np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 0, 1], [0, 0, 1, 0]])
@@ -111,6 +113,10 @@ def U3(theta: float, phi, lam, i: int, n_qubits: int) -> np.ndarray:
     return gate
 
 
+def U3_params(params):
+    return U3(params[0], params[1], params[2], 0, 1)
+
+
 def phase(angle: float, i: int, n_qubits: int) -> np.ndarray:
     c = math.cos(angle)
     s = math.sin(angle)
@@ -190,16 +196,20 @@ def clifford_T_gate_set(n_qubits: int):
     return key
 
 
-def random_unitary():
-    phi1 = random.random() * math.pi * 2
-    phi2 = random.random() * math.pi * 2
-    theta = random.random() * math.pi * 2
-    print(phi1 / math.pi, phi2 / math.pi, theta / math.pi)
-    c = math.cos(theta)
-    s = math.sin(theta)
-    e1 = cmath.exp(complex(0, phi1))
-    e2 = cmath.exp(complex(0, phi2))
-    return np.array([[e1 * c, e2 * s], [- s / e2, c / e1]])
+# def random_unitary():
+#     phi1 = random.random() * math.pi * 2
+#     phi2 = random.random() * math.pi * 2
+#     theta = random.random() * math.pi * 2
+#     print(phi1 / math.pi, phi2 / math.pi, theta / math.pi)
+#     c = math.cos(theta)
+#     s = math.sin(theta)
+#     e1 = cmath.exp(complex(0, phi1))
+#     e2 = cmath.exp(complex(0, phi2))
+#     return np.array([[e1 * c, e2 * s], [- s / e2, c / e1]])
+
+
+def random_unitary(n_qubits):
+    return unitary_group.rvs(2 ** n_qubits)
 
 
 def random_two_qubit_circuit():

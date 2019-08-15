@@ -74,8 +74,8 @@ class ProcessMatrixFinder:
 
     def get_single_qubit_gate_process_matrix(self, instruction):
         s = str(instruction)
-        if s in self.process_cache:
-            return self.process_cache[s]
+        #if s in self.process_cache:
+        #    return self.process_cache[s]
         t = instruction.op.get_type()
         qubit = instruction.qubits[0]
         if t in matrices_no_params:
@@ -91,7 +91,7 @@ class ProcessMatrixFinder:
             z = sp.kron(sp.kron(sp.eye(4 ** qubit), sp.csr_matrix(little_process)), sp.eye(4 ** (self.n_qubits - qubit - 1)))
         else:
             z = np.kron(np.kron(np.eye(4 ** qubit), little_process), np.eye(4 ** (self.n_qubits - qubit - 1)))
-        self.process_cache.update({s: z})
+        # self.process_cache.update({s: z})
         return z
 
     def get_swap_process_matrix(self, i, j):
@@ -104,9 +104,11 @@ class ProcessMatrixFinder:
             self.swap_processes[(i, j)] = p
             return p
 
-    def unitary_to_process_matrix(self, unitary):
-        return np.vstack([[np.einsum('ij,ji->', unitary @ d2 @ unitary.transpose().conjugate(), d1, optimize=True) / (2 ** self.n_qubits)
-                        for d1 in get_diracs(self.n_qubits)] for d2 in get_diracs(self.n_qubits)]).transpose()
+    def unitary_to_process_matrix(self, unitary, n=None):
+        if n is None:
+            n = self.n_qubits
+        return np.vstack([[np.einsum('ij,ji->', unitary @ d2 @ unitary.transpose().conjugate(), d1, optimize=True) / (2 ** n)
+                        for d1 in get_diracs(n)] for d2 in get_diracs(n)]).transpose()
 
     def instructions_to_process_matrix(self, instructions):
         s = "".join([str(inst) for inst in instructions])
