@@ -11,7 +11,7 @@ from qiskit.converters.dag_to_circuit import dag_to_circuit
 def suggest_cnot_unitary(unitary):
     dim = unitary.shape[0]
     basis_rows = [r for r in np.eye(dim)]
-    new_rows = [basis_rows[np.argmax(u_row)] for u_row in unitary]
+    new_rows = [basis_rows[np.argmax(np.abs(u_row))] for u_row in unitary]
     new = np.vstack(new_rows)
     if (new @ new.transpose() != np.eye(dim)).any():
         raise ValueError("I don't know to make that unitary")
@@ -89,16 +89,17 @@ def function_to_mnots(f, n_qubits):
         ds = [i for i in range(n_qubits) if first <= i <= last and not b[i]]
         for i in range(n_qubits):
             if g(b)[i] != b[i]:
-                desc.append("M:" + str(cs) + ":" + str(ds) + ":" + str(i))
+                desc.append((cs + ds, i))
                 g = compose(mnot(cs, ds, i), g)
     return desc
 
 
-def mnot_template(n_controls):
+def mnot_templates(n_controls):
     if n_controls == 0:
         return Circuit(1)
     c1 = Circuit(2)
     c1.CX(0, 1)
+    c1.add_circuit(c1.copy(), [0, 1])
     if n_controls == 1:
         return c1
     c2 = Circuit(3)
@@ -107,6 +108,12 @@ def mnot_template(n_controls):
     c2.CX(1, 2)
     c2.CX(0, 1)
     c2.CX(0, 2)
+    #c2.CX(1, 2)
+    #c2.CX(0, 2)
+    #c2.CX(1, 2)
+    #c2.CX(0, 2)
+    #c2.CX(0, 1)
+    #c2.add_circuit(c2.copy(), [0, 1, 2])
     circs = [c1, c2]
     for i in range(3, n_controls + 1):
         c = Circuit(i + 1)
@@ -114,8 +121,9 @@ def mnot_template(n_controls):
         c.add_circuit(circs[-1], list(range(i)))
         c.add_circuit(circs[-1], list(range(i)))
         c.CX(i - 1, i)
+        c.add_circuit(c.copy(), list(range(c.n_qubits)))
         circs.append(c)
-    return circs[-1]
+    return circs
 
 
 def greedy(f, n_qubits):
@@ -173,7 +181,12 @@ def cnot_unitary_to_circuit(u, n_qubits):
 
 
 def approximate_with_cnots(unitary):
-    # return converter.instructions_to_circuit(decompose_unitary(unitary))
     n_qubits = int(math.log(unitary.shape[0], 2))
-    return cnot_unitary_to_circuit(suggest_cnot_unitary(unitary), n_qubits)
+    mnots = function_to_mnots(matrix_to_function(suggest_cnot_unitary(unitary), n_qubits), n_qubits)
+    circs = mnot_templates(n_qubits)
+    c = Circuit(n_qubits)
+    for mnot in mnots:
+        n_controls = len(mnot[0])
+        c.add_circuit(circs[n_controls - 1], mnot[0] + [mnot[1]])
+    return c
 

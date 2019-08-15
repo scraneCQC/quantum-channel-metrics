@@ -129,6 +129,8 @@ class ProcessMatrixFinder:
         #            self.process_cache.update({s: m})
         #        return m
         m = np.eye(self.d2)
+        #m = converter.matrix_list_product([self.cnot_processes[tuple(inst.qubits)] if inst.op.get_type() == OpType.CX else
+        #                                   self.get_single_qubit_gate_process_matrix(inst) for inst in instructions], default_size=self.d2)
         for inst in instructions:
             if inst.op.get_type() == OpType.CX:
                 m = self.cnot_processes[tuple(inst.qubits)] @ m
