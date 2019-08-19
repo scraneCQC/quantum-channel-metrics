@@ -1,13 +1,11 @@
 from Pauli import *
 import math
-from metrics.approximation_runner import get_pauli_expectation
 from metrics import density_runner
 from metrics.density_runner import apply_channel
 from pytket import Circuit
 from itertools import product
 from typing import Iterable, Any, Dict, Optional
 from pytket.backends import Backend
-from openfermion import QubitOperator
 
 
 class ProcessFidelityFinder():
@@ -71,35 +69,36 @@ class ProcessFidelityFinder():
         return circuit
 
     def load_expectations_from_file(self, filename):
-        expectations = np.full((self.dim ** 2,), np.nan)
+        expectations = np.full((self.dim ** 2, self.dim ** 2), np.nan)
         with open(filename) as file:
             lines = file.readlines()
         for line in lines:
             d = line.split()
-            expectations[int(d[0])] = float(d[1])
+            expectations[int(d[0])][int(d[1])] = float(d[2])
         return expectations
 
-    def save_expectations_to_file(self, filename, expectations: np.ndarray):
-        print("saving to file", expectations)
+    def save_expectations_to_file(self, filename, expectations: np.ndarray, k: int, l: int):
+        # print("saving to file", expectations)
         with open(filename, "a+") as file:
-            file.writelines([str(k) + " " + str(expectations[k]) + "\n"
-                             for k in range(self.dim ** 2) if not np.isnan(expectations[k])])
+            file.writelines([str(k) + " " + str(l) + " " + str(expectations[k][l]) + "\n"])
 
     def f_pro_simulated(self, circuit: Circuit, unitary: np.ndarray, backend: Backend, filename, start=0) -> float:
         b = np.einsum('ab,jbc,dc,lda->lj', unitary, self.u_basis, unitary.conjugate(), self.u_basis, optimize=True) / self.dim
         m = (b @ self.a).real
         expectations = self.load_expectations_from_file(filename)
-        for k in range(start, self.dim ** 2):
-            if np.isnan(expectations[k]):
-                sigma = QubitOperator()
-                for l in range(self.dim ** 2):
-                    pauli_string = "".join(self.pauli_strings[l])
-                    sigma += QubitOperator([(i, pauli_string[i]) for i in range(len(pauli_string)) if pauli_string[i] != "I"], m[l][k])
-                c = self.preps[k].copy()
-                c.add_circuit(circuit, list(range(self.n_qubits)))
-                expectations[k] = backend.get_operator_expectation_value(c, sigma, shots=8192)
-                self.save_expectations_to_file(filename, expectations)
-        return 1 / self.dim ** 3 * sum(expectations).real
+        for k, l in list(product(range(start, self.dim ** 2), range(self.dim ** 2))):
+            if np.isnan(expectations[l][k]):
+                if abs(m[l][k]) > 1e-5:
+                    print(k, l)
+                    c = self.preps[k].copy()
+                    c.add_circuit(circuit, list(range(self.n_qubits)))
+                    pauli_string = self.pauli_strings[l]
+                    expectations[l][k] = backend.get_pauli_expectation_value(c, [(i, pauli_string[i]) for i in
+                                                                                 range(len(pauli_string)) if
+                                                                                 pauli_string[i] != "I"], shots=8192)
+                    self.save_expectations_to_file(filename, expectations, l, k)
+        expectations = np.where(np.isnan(expectations), 0, expectations)
+        return 1 / self.dim ** 3 * np.einsum('lk,lk->', expectations, m).real
 
     def effect_of_noise(self, circuit_description: Iterable[Any], noise_channels: Iterable = [],  n_qubits: int = 1,
                         circuit_key: Optional[Dict[Any, np.ndarray]] = None) -> float:

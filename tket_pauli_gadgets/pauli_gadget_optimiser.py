@@ -11,7 +11,7 @@ from pytket.backends.ibm import IBMQBackend
 
 
 amplification = 1
-single_noise, cnot_noise = channels(amplification=amplification)
+single_noise, cnot_noise = channels(amplification=amplification, gate_time=0.05)
 
 
 def run(n_qubits):
@@ -94,37 +94,40 @@ def get_opt_fid(s: str, angle: float, rewriter: RewriteTket):
 def plot_angles(s):
     fid = ProcessFidelityFinder(len(s))
     rewriter = RewriteTket(Circuit(len(s)), single_noise, cnot_noise, verbose=False)
-    backend = AerBackend(amplified_qiskit_model("ibmqx4", amplification=amplification))
+    # backend = AerBackend(amplified_qiskit_model("ibmqx4", amplification=amplification))
     # backend = IBMQBackend("ibmq_5_tenerife")
-    angles = [2 * i / 20 for i in range(11)]
+    angles = [2 * i / 200 for i in range(101)]
     fidelities = []
     opt_fidelities = []
     for a in angles:
         print(a)
-        filename1 = "../metrics/data/ibm_noise2/c" + str(a) + ".txt"
-        filename2 = "../metrics/data/ibm_noise2/rounded" + str(a) + ".txt"
+        #filename1 = "../metrics/data/sim_10/c" + str(a) + ".txt"
+        #filename2 = "../metrics/data/sim_10/rounded" + str(a) + ".txt"
         # create files if they don't exist:
-        with open(filename1, "a+") as file:
-            pass
-        with open(filename2, "a+") as file:
-            pass
+        #with open(filename1, "a+") as file:
+        #    pass
+        #with open(filename2, "a+") as file:
+        #    pass
         #rewriter.set_circuit_and_target(pauli_gadget(a, s, len(s)))
         #f = rewriter.reduce()
         circ = pauli_gadget(a, s, len(s))
         rewriter.set_circuit_and_target(circ.copy())
         cleanup.apply(circ)
-        fidelities.append(fid.f_pro_simulated(circ.copy(), rewriter.target, backend, filename1))
-        print(fidelities[-1])
-        rewriter.reduce()
-        opt_fidelities.append(fid.f_pro_simulated(rewriter.circuit.copy(), rewriter.target, backend, filename2))
-        print(opt_fidelities[-1])
+        f = rewriter.reduce()
+        fidelities.append(f[0])
+        opt_fidelities.append(f[1])
+        #fidelities.append(fid.f_pro_simulated(circ.copy(), rewriter.target, backend, filename1))
+        #print(fidelities[-1])
+        #rewriter.reduce()
+        #opt_fidelities.append(fid.f_pro_simulated(rewriter.circuit.copy(), rewriter.target, backend, filename2))
+        #print(opt_fidelities[-1])
     plt.figure()
     line_orig, = plt.plot(angles, fidelities)
     line_reduced, = plt.plot(angles, opt_fidelities, r'--')
     plt.xlabel(r"$\alpha$ (multiples of $\pi$)")
     plt.ylabel("Fidelity of " + s + " gadget")
     plt.legend((line_orig, line_reduced), ("Original", "Rounded"), loc="upper left", bbox_to_anchor=(0.14, 0.95))
-    plt.savefig("../graphs/gadget_" + s + "_ibm.png")
+    plt.savefig("../graphs/gadget_" + s + "_ibm_sim_10.png")
     plt.close()
 
 

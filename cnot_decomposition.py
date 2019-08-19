@@ -108,20 +108,17 @@ def mnot_templates(n_controls):
     c2.CX(1, 2)
     c2.CX(0, 1)
     c2.CX(0, 2)
-    #c2.CX(1, 2)
-    #c2.CX(0, 2)
-    #c2.CX(1, 2)
-    #c2.CX(0, 2)
-    #c2.CX(0, 1)
-    #c2.add_circuit(c2.copy(), [0, 1, 2])
     circs = [c1, c2]
     for i in range(3, n_controls + 1):
         c = Circuit(i + 1)
         c.CX(i - 1, i)
-        c.add_circuit(circs[-1], list(range(i)))
+        c.CX(i - 1, i)
         c.add_circuit(circs[-1], list(range(i)))
         c.CX(i - 1, i)
-        c.add_circuit(c.copy(), list(range(c.n_qubits)))
+        c.CX(i - 1, i)
+        c.add_circuit(circs[-1], list(range(i)))
+        c.add_circuit(circs[-1], list(range(i - 1)) + [i])
+        c.add_circuit(circs[-1], list(range(i - 1)) + [i])
         circs.append(c)
     return circs
 
