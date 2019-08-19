@@ -53,8 +53,9 @@ def is_it_worth_it(unitary: np.ndarray, noise_strength: float) -> bool:
     noise = standard_noise_channels(noise_strength, n_qubits)
     circuit = ["A"]
     key = {"A": unitary}
-    do_it = J_fidelity.f_pro_experimental(circuit, unitary, noise, key)
-    dont_do_it = J_fidelity.f_pro([unitary], np.eye(unitary.shape[0]))
+    f_pro = J_fidelity.ProcessFidelityFinder(n_qubits)
+    do_it = f_pro.f_pro_experimental(circuit, unitary, noise, key)
+    dont_do_it = f_pro.f_pro([unitary], np.eye(unitary.shape[0]))
     if do_it > dont_do_it:
         return True
     return False

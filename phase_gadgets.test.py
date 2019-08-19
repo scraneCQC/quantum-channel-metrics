@@ -1,9 +1,12 @@
 from common_gates import get_Rz_key, cnot_key
 import math
-from metrics.J_fidelity import effect_of_noise
+from metrics.J_fidelity import ProcessFidelityFinder
 from noise import standard_noise_channels
 from typing import Dict
 import numpy as np
+
+f_pro = ProcessFidelityFinder(4)
+effect_of_noise  = f_pro.effect_of_noise
 
 
 def get_key(angle: float) -> Dict[str, np.ndarray]:

@@ -1,12 +1,11 @@
-from functools import reduce4
+from functools import reduce
 
 from typing import Iterable, Dict
 from Pauli import *
 from caching_runner import CachingRunner
-from metrics.J_fidelity import f_pro
+from metrics.J_fidelity import ProcessFidelityFinder
 from noise import depolarising_channel
 from common_gates import discrete_angle_key, cnot12, cnot21
-
 
 class SubcircuitRemover:
 
@@ -175,7 +174,8 @@ def run_all(circuits: Iterable, circuit_key: Dict, noise_channels: Iterable, n_q
             u2 = sr.unitary
             print("Result:\n", res[-1])
             print("New fidelity:", sr.fidelity(sr.circuit))
-            print("Fidelity of ideal circuits", f_pro([u1], u2))
+            fid = ProcessFidelityFinder(n_qubits)
+            print("Fidelity of ideal circuits", fid.f_pro([u1], u2))
             print()
             print()
     return res

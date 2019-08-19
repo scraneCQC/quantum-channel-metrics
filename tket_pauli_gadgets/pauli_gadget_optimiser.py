@@ -6,7 +6,7 @@ from noise import phase_damping_channel
 from tket_pauli_gadgets.noise_models import channels, amplified_qiskit_model
 import numpy as np
 import matplotlib.pyplot as plt
-from metrics.J_fidelity import f_pro_simulated
+from metrics.J_fidelity import ProcessFidelityFinder
 from pytket.backends.ibm import IBMQBackend
 
 
@@ -92,16 +92,17 @@ def get_opt_fid(s: str, angle: float, rewriter: RewriteTket):
 
 
 def plot_angles(s):
+    fid = ProcessFidelityFinder(len(s))
     rewriter = RewriteTket(Circuit(len(s)), single_noise, cnot_noise, verbose=False)
-    # backend = AerBackend(amplified_qiskit_model("ibmqx4", amplification=amplification))
-    backend = IBMQBackend("ibmq_5_tenerife")
+    backend = AerBackend(amplified_qiskit_model("ibmqx4", amplification=amplification))
+    # backend = IBMQBackend("ibmq_5_tenerife")
     angles = [2 * i / 20 for i in range(11)]
     fidelities = []
     opt_fidelities = []
     for a in angles:
         print(a)
-        filename1 = "metrics/data/actual_ibm/c" + str(a) + ".txt"
-        filename2 = "metrics/data/actual_ibm/rounded" + str(a) + ".txt"
+        filename1 = "../metrics/data/ibm_noise2/c" + str(a) + ".txt"
+        filename2 = "../metrics/data/ibm_noise2/rounded" + str(a) + ".txt"
         # create files if they don't exist:
         with open(filename1, "a+") as file:
             pass
@@ -112,10 +113,10 @@ def plot_angles(s):
         circ = pauli_gadget(a, s, len(s))
         rewriter.set_circuit_and_target(circ.copy())
         cleanup.apply(circ)
-        fidelities.append(f_pro_simulated(circ.copy(), rewriter.target, backend, filename1))
+        fidelities.append(fid.f_pro_simulated(circ.copy(), rewriter.target, backend, filename1))
         print(fidelities[-1])
         rewriter.reduce()
-        opt_fidelities.append(f_pro_simulated(rewriter.circuit.copy(), rewriter.target, backend, filename2))
+        opt_fidelities.append(fid.f_pro_simulated(rewriter.circuit.copy(), rewriter.target, backend, filename2))
         print(opt_fidelities[-1])
     plt.figure()
     line_orig, = plt.plot(angles, fidelities)
@@ -123,7 +124,7 @@ def plot_angles(s):
     plt.xlabel(r"$\alpha$ (multiples of $\pi$)")
     plt.ylabel("Fidelity of " + s + " gadget")
     plt.legend((line_orig, line_reduced), ("Original", "Rounded"), loc="upper left", bbox_to_anchor=(0.14, 0.95))
-    plt.savefig("graphs/gadget_" + s + "_ibm.png")
+    plt.savefig("../graphs/gadget_" + s + "_ibm.png")
     plt.close()
 
 

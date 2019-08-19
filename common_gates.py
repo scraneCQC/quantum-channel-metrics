@@ -131,6 +131,30 @@ def U3_derivative(params, i):
         return np.array([[0, 0], [complex(0, 1) * e1 * s, complex(0, 1) * e1 * e2 * c]])
     return np.array([[0, complex(0, -1) * e2 * s], [0, complex(0, 1) * e1 * e2 * c]])
 
+
+def U3_hess(params, i, j):
+    theta = params[0]
+    phi = params[1]
+    lam = params[2]
+    c = math.cos(theta / 2)
+    s = math.sin(theta / 2)
+    e1 = cmath.exp(complex(0, phi))
+    e2 = cmath.exp(complex(0, lam))
+    if j < i:
+        i, j = j, i
+    if i == 0:
+        if j == 0:
+            return np.array([[c, -e2 * s], [e1 * s, e1 * e2 * c]])
+        if j == 1:
+            return np.array([[0, 0], [complex(0, 0.5) * e1 * c, complex(0, -0.5) * e1 * e2 * s]])
+        return np.array([[0, complex(0, -0.5) * e2 * c], [0, complex(0, -0.5) * e1 * e2 * s]])
+    if i == 1:
+        if j == 1:
+            return np.array([[0, 0], [- e1 * s, -e1 * e2 * c]])
+        return np.array([[0, 0], [0, - e1 * e2 * c]])
+    return np.array([[0, e2 * s], [0, -e1 * e2 * c]])
+
+
 def phase(angle: float, i: int, n_qubits: int) -> np.ndarray:
     c = math.cos(angle)
     s = math.sin(angle)

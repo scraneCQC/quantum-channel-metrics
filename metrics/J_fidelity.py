@@ -7,120 +7,114 @@ from pytket import Circuit
 from itertools import product
 from typing import Iterable, Any, Dict, Optional
 from pytket.backends import Backend
+from openfermion import QubitOperator
 
 
-one_qubit_state_basis = [I1, I1 + X, I1 + Y, I1 + Z]
+class ProcessFidelityFinder():
+    simple_state_basis = [I1, I1 + X, I1 + Y, I1 + Z]
+    pure_state_basis = [(I1 - Z) / 2, (I1 + X) / 2, (I1 + Y) / 2, (I1 + Z) / 2]
+    one_qubit_a = np.array([[1, 0, 0, 1], [-1, 2, 0, -1], [-1, 0, 2, -1], [-1, 0, 0, 1]])
+    one_qubit_preps = [(lambda i, c: c.X(i)), (lambda i, c: c.H(i)), (lambda i, c: c.Rx(i, -0.5)), (lambda i, c: None)]
 
+    def __init__(self, n_qubits):
+        self.set_n_qubits(n_qubits)
 
-def f_pro(channel: Iterable[np.ndarray], unitary: np.ndarray) -> float:
-    dim = channel[0].shape[0]
-    n_qubits = int(math.log(dim, 2))  # please don't give me qudits, the Pauli's aren't nice
-    u_basis = get_diracs(n_qubits)
-    state_basis = one_qubit_state_basis
-    for _ in range(n_qubits - 1):
-        state_basis = [np.kron(x, y) for x in state_basis for y in one_qubit_state_basis]
-    a = np.array(np.eye(dim ** 2) -
-                 np.outer([0] + [1 for _ in range(dim ** 2 - 1)], [1] + [0 for _ in range(dim ** 2 - 1)]))
-    sigmas = [sum([a[k][l] * unitary @ u_basis[k] @ unitary.transpose().conjugate()
-                   for k in range(dim ** 2)]) for l in range(dim ** 2)]
-    return 1 / dim ** 3 * \
-        sum([np.trace(sigmas[k] @ apply_channel(channel, state_basis[k])) for k in range(dim ** 2)]).real
+    def set_n_qubits(self, n_qubits):
+        self.n_qubits = n_qubits
+        self.dim = 2 ** n_qubits
+        self.u_basis = np.array(get_diracs(n_qubits))
+        a = ProcessFidelityFinder.one_qubit_a
+        n_qubit_pure_basis = ProcessFidelityFinder.pure_state_basis
+        for _ in range(n_qubits - 1):
+            n_qubit_pure_basis = [np.kron(x, y) for x in ProcessFidelityFinder.pure_state_basis for y in n_qubit_pure_basis]
+            a = np.kron(a, ProcessFidelityFinder.one_qubit_a)
+        self.a = a
+        self.n_qubit_pure_basis = n_qubit_pure_basis
+        self.pauli_strings = list(product("IXYZ", repeat=n_qubits))
+        self.preps = [self.prepare_state(t) for t in product([0, 1, 2, 3], repeat=n_qubits)]
 
+    def f_pro(self, channel: Iterable[np.ndarray], unitary: np.ndarray) -> float:
+        dim = channel[0].shape[0]
+        n_qubits = int(math.log(dim, 2))  # please don't give me qudits, the Pauli's aren't nice
+        u_basis = get_diracs(n_qubits)
+        state_basis = ProcessFidelityFinder.simple_state_basis
+        for _ in range(n_qubits - 1):
+            state_basis = [np.kron(x, y) for x in state_basis for y in ProcessFidelityFinder.simple_state_basis]
+        a = np.array(np.eye(dim ** 2) -
+                     np.outer([0] + [1 for _ in range(dim ** 2 - 1)], [1] + [0 for _ in range(dim ** 2 - 1)]))
+        sigmas = [sum([a[k][l] * unitary @ u_basis[k] @ unitary.transpose().conjugate()
+                       for k in range(dim ** 2)]) for l in range(dim ** 2)]
+        return 1 / dim ** 3 * \
+            sum([np.trace(sigmas[k] @ apply_channel(channel, state_basis[k])) for k in range(dim ** 2)]).real
 
-def f_pro_experimental(circuit_string: Iterable[Any], unitary: np.ndarray, noise_channels: Iterable = [],
-                       key: Dict[Any, np.ndarray] = None) -> float:
-    dim = unitary.shape[0]
-    n_qubits = int(math.log(dim, 2))
-    u_basis = get_diracs(n_qubits)
-    state_basis = one_qubit_state_basis
-    for _ in range(n_qubits - 1):
-        state_basis = [np.kron(x, y) for x in state_basis for y in one_qubit_state_basis]
-    a = np.array(np.eye(dim ** 2) -
-                 np.outer([0] + [1 for _ in range(dim ** 2 - 1)], [1] + [0 for _ in range(dim ** 2 - 1)]))
-    sigmas = [sum([a[k][l] * unitary @ u_basis[k] @ unitary.transpose().conjugate()
-                   for k in range(dim ** 2)]) for l in range(dim ** 2)]
-    expectations = [np.trace(sigmas[k] @ density_runner.run_by_matrices(circuit_string, state_basis[k], noise_channels, key))
-                    .real for k in range(dim ** 2)]
-    # print(expectations)
-    return 1 / dim ** 3 * sum(expectations)
+    def f_pro_experimental(self, circuit_string: Iterable[Any], unitary: np.ndarray, noise_channels: Iterable = [],
+                           key: Dict[Any, np.ndarray] = None) -> float:
+        dim = unitary.shape[0]
+        n_qubits = int(math.log(dim, 2))
+        u_basis = get_diracs(n_qubits)
+        state_basis = ProcessFidelityFinder.simple_state_basis
+        for _ in range(n_qubits - 1):
+            state_basis = [np.kron(x, y) for x in state_basis for y in ProcessFidelityFinder.simple_state_basis]
+        a = np.array(np.eye(dim ** 2) -
+                     np.outer([0] + [1 for _ in range(dim ** 2 - 1)], [1] + [0 for _ in range(dim ** 2 - 1)]))
+        sigmas = [sum([a[k][l] * unitary @ u_basis[k] @ unitary.transpose().conjugate()
+                       for k in range(dim ** 2)]) for l in range(dim ** 2)]
+        expectations = [np.trace(sigmas[k] @ density_runner.run_by_matrices(circuit_string, state_basis[k], noise_channels, key))
+                        .real for k in range(dim ** 2)]
+        # print(expectations)
+        return 1 / dim ** 3 * sum(expectations)
 
+    def prepare_state(self, single_qubit_states):
+        circuit = Circuit(self.n_qubits)
+        for i in range(len(single_qubit_states)):
+            ProcessFidelityFinder.one_qubit_preps[single_qubit_states[i]](i, circuit)
+        return circuit
 
-dim = 8
-n_qubits = 3
-u_basis = np.array(get_diracs(n_qubits))
-state_basis = [(I1 - Z) / 2, (I1 + X) / 2, (I1 + Y) / 2, (I1 + Z) / 2]
-one_qubit_states = state_basis
-one_qubit_a = np.array([[1, 0, 0, 1], [-1, 2, 0, -1], [-1, 0, 2, -1], [-1, 0, 0, 1]])
-a = one_qubit_a
-for _ in range(n_qubits - 1):
-    state_basis = [np.kron(x, y) for x in one_qubit_states for y in state_basis]
-    a = np.kron(a, one_qubit_a)
-state_basis = np.array(state_basis)
-sigmas = u_basis
-s = list(product("IXYZ", repeat=n_qubits))
+    def load_expectations_from_file(self, filename):
+        expectations = np.full((self.dim ** 2,), np.nan)
+        with open(filename) as file:
+            lines = file.readlines()
+        for line in lines:
+            d = line.split()
+            expectations[int(d[0])] = float(d[1])
+        return expectations
 
+    def save_expectations_to_file(self, filename, expectations: np.ndarray):
+        print("saving to file", expectations)
+        with open(filename, "a+") as file:
+            file.writelines([str(k) + " " + str(expectations[k]) + "\n"
+                             for k in range(self.dim ** 2) if not np.isnan(expectations[k])])
 
-one_qubit_preps = [(lambda i, c: c.X(i)), (lambda i, c: c.H(i)), (lambda i, c: c.Rx(i, -0.5)), (lambda i, c: None)]
+    def f_pro_simulated(self, circuit: Circuit, unitary: np.ndarray, backend: Backend, filename, start=0) -> float:
+        b = np.einsum('ab,jbc,dc,lda->lj', unitary, self.u_basis, unitary.conjugate(), self.u_basis, optimize=True) / self.dim
+        m = (b @ self.a).real
+        expectations = self.load_expectations_from_file(filename)
+        for k in range(start, self.dim ** 2):
+            if np.isnan(expectations[k]):
+                sigma = QubitOperator()
+                for l in range(self.dim ** 2):
+                    pauli_string = "".join(self.pauli_strings[l])
+                    sigma += QubitOperator([(i, pauli_string[i]) for i in range(len(pauli_string)) if pauli_string[i] != "I"], m[l][k])
+                c = self.preps[k].copy()
+                c.add_circuit(circuit, list(range(self.n_qubits)))
+                expectations[k] = backend.get_operator_expectation_value(c, sigma, shots=8192)
+                self.save_expectations_to_file(filename, expectations)
+        return 1 / self.dim ** 3 * sum(expectations).real
 
+    def effect_of_noise(self, circuit_description: Iterable[Any], noise_channels: Iterable = [],  n_qubits: int = 1,
+                        circuit_key: Optional[Dict[Any, np.ndarray]] = None) -> float:
+        d = 2 ** n_qubits
+        unitary = np.eye(d)
+        for s in circuit_description[::-1]:
+            unitary = circuit_key[s] @ unitary
+        return 1 - self.f_pro_experimental(circuit_description, unitary, noise_channels, key=circuit_key)
 
-def prepare_state(single_qubit_states):
-    circuit = Circuit(n_qubits)
-    for i in range(len(single_qubit_states)):
-        one_qubit_preps[single_qubit_states[i]](i, circuit)
-    return circuit
+    def angle(self, channel: Iterable[np.ndarray], unitary: np.ndarray) -> float:
+        return math.acos(self.f_pro(channel, unitary) ** 0.5)
 
+    def bures(self, channel: Iterable[np.ndarray], unitary: np.ndarray) -> float:
+        f = max(self.f_pro(channel, unitary), 0)
+        return (1 - f ** 0.5) ** 0.5
 
-preps = [prepare_state(t) for t in product([0, 1, 2, 3], repeat=n_qubits)]
-
-
-def load_expectations_from_file(filename):
-    expectations = np.full((dim ** 2, dim ** 2), np.nan)
-    with open(filename) as file:
-        lines = file.readlines()
-    for line in lines:
-        d = line.split()
-        expectations[int(d[0])][int(d[1])] = float(d[2])
-    return expectations
-
-
-def save_expectations_to_file(filename, expectations: np.ndarray):
-    with open(filename, "w") as file:
-        file.writelines([str(l) + " " + str(k) + " " + str(expectations[l][k]) + " " + "".join(s[l]) + "\n"
-                         for l in range(dim ** 2) for k in range(dim ** 2) if not np.isnan(expectations[l][k])])
-
-
-def f_pro_simulated(circuit: Circuit, unitary: np.ndarray, backend: Backend, filename) -> float:
-    b = np.einsum('ab,jbc,dc,lda->lj', unitary, u_basis, unitary.conjugate(), sigmas, optimize=True) / dim
-    m = b @ a
-    expectations = load_expectations_from_file(filename)
-    for k, l in list(product(range(dim ** 2), range(dim ** 2))):
-        if np.isnan(expectations[l][k]):
-            if abs(m[l][k]) > 1e-5:
-                expectations[l][k] = get_pauli_expectation(circuit, preps[k], "".join(s[l]), backend, shots=8192)
-                save_expectations_to_file(filename, expectations)
-        if k == l:
-            save_expectations_to_file(filename, expectations)
-    expectations = np.where(np.isnan(expectations), 0, expectations)
-    return 1 / dim ** 3 * np.einsum('lk,lk->', expectations, m).real
-
-
-def effect_of_noise(circuit_description: Iterable[Any], noise_channels: Iterable = [],  n_qubits: int = 1,
-                    circuit_key: Optional[Dict[Any, np.ndarray]] = None) -> float:
-    d = 2 ** n_qubits
-    unitary = np.eye(d)
-    for s in circuit_description[::-1]:
-        unitary = circuit_key[s] @ unitary
-    return 1 - f_pro_experimental(circuit_description, unitary, noise_channels, key=circuit_key)
-
-
-def angle(channel: Iterable[np.ndarray], unitary: np.ndarray) -> float:
-    return math.acos(f_pro(channel, unitary) ** 0.5)
-
-
-def bures(channel: Iterable[np.ndarray], unitary: np.ndarray) -> float:
-    f = max(f_pro(channel, unitary), 0)
-    return (1 - f ** 0.5) ** 0.5
-
-
-def C(channel: Iterable[np.ndarray], unitary: np.ndarray) -> float:  # That's the only name they give it
-    return (1 - f_pro(channel, unitary)) ** 0.5
+    def C(self, channel: Iterable[np.ndarray], unitary: np.ndarray) -> float:  # That's the only name they give it
+        return (1 - self.f_pro(channel, unitary)) ** 0.5

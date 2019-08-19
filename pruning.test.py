@@ -26,8 +26,9 @@ def run(n_qubits: int, circuit_length: int, tolerance: float, noise_strength: fl
         for s in pruned[::-1]:
             pruned_unitary = key[s] @ pruned_unitary
 
-        original_f = J_fidelity.f_pro_experimental(circuit, unitary, noise, key)
-        pruned_f = J_fidelity.f_pro_experimental(pruned, unitary, noise, key)
+        f_pro = J_fidelity.ProcessFidelityFinder(n_qubits)
+        original_f = f_pro.f_pro_experimental(circuit, unitary, noise, key)
+        pruned_f = f_pro.f_pro_experimental(pruned, unitary, noise, key)
         difference = pruned_f - original_f
         total += difference
     return total / n_trials, total_gates_cut / n_trials
@@ -45,8 +46,9 @@ def run_v2(n_qubits: int, circuit_length: int, noise_strength: float, n_trials: 
         for s in circuit[::-1]:
             unitary = key[s] @ unitary
 
-        original_f = J_fidelity.f_pro_experimental(circuit, unitary, noise, key)
-        pruned_f = J_fidelity.f_pro_experimental(pruned, unitary, noise, key)
+        f_pro = J_fidelity.ProcessFidelityFinder(n_qubits)
+        original_f = f_pro.f_pro_experimental(circuit, unitary, noise, key)
+        pruned_f = f_pro.f_pro_experimental(pruned, unitary, noise, key)
         difference = pruned_f - original_f
         return difference, gates_cut
 

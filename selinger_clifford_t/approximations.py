@@ -3,7 +3,7 @@ from typing import List
 
 
 def generate_circuit(theta: str, accuracy: int) -> str:
-    res = subprocess.run(["../gridsynth", theta, "-b "+str(accuracy), "-p", "-r 0"],
+    res = subprocess.run(["../../gridsynth", theta, "-b "+str(accuracy), "-p", "-r 0"],
                          stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     return str(res.stdout)[2:-3]
 

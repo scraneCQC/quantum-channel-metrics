@@ -4,10 +4,6 @@ import numpy as np
 from tket_pauli_gadgets.process_matrix import ProcessMatrixFinder, matrices_with_params
 from tket_pauli_gadgets import werner
 from tket_pauli_gadgets.converter import converter
-from itertools import permutations
-from pytket import OpType
-import random
-from metrics.J_distance import j_distance_experimental
 
 
 # noinspection PyCallByClass
@@ -18,6 +14,7 @@ cleanup = Transform.sequence([
                                   Transform.CommuteRzRxThroughCX()])),
                               Transform.OptimisePauliGadgets(),
                               Transform.ReduceSingles()])
+
 
 class RewriteTket:
 
@@ -108,53 +105,6 @@ class RewriteTket:
             return True
         return False
 
-    def find_best_angle(self, instruction_index, param_index, accuracy, adjust=False):
-        inst = self.instructions[instruction_index]
-        if inst.op.get_type() not in matrices_with_params:
-            return
-        params = inst.op.get_params()
-        if param_index >= len(params):
-            return
-        res = dict()
-        if adjust:
-            possible_angles = [params[param_index] + 2 ** (-accuracy), params[param_index] - 2 ** (-accuracy)]
-        else:
-            possible_angles = [2 ** -accuracy * n for n in range(2 ** (accuracy + 1))]
-        for t in possible_angles:
-            new_params = list(params)
-            new_params[param_index] = t
-            new_circuit = converter.instructions_to_circuit(self.instructions[:instruction_index])
-            new_circuit.add_operation(inst.op.get_type(), new_params, inst.qubits)
-            new_circuit.add_circuit(converter.instructions_to_circuit(self.instructions[instruction_index + 1:]),
-                                    list(range(self.n_qubits)))
-            new_fidelity = self.fidelity(new_circuit.get_commands())
-            res[t] = (new_fidelity - self.original_fidelity, new_circuit, instruction_index, new_params)
-        best = max(res.values(), key=lambda x: x[0])
-        if best[0] > 0:
-            if self.verbose:
-                print("Changing angle of", self.instructions[instruction_index], "to", best[3], "to improve fidelity by", best[0])
-            self.set_circuit(best[1])
-            self.original_fidelity = self.original_fidelity + best[0]
-            return True
-        return False
-
-    def remove_cnots(self):
-        res = dict()
-        for i in range(self.circuit.n_gates):
-            inst = self.instructions[i]
-            if inst.op.get_type() == OpType.CX:
-                new_circuit = converter.instructions_to_circuit(self.instructions[:i] + self.instructions[i:])
-                new_fidelity = self.fidelity(new_circuit.get_commands())
-                res[i] = (i, new_circuit, new_fidelity)
-        best = max(res.values(), key=lambda x: x[2])
-        if best[2] > self.original_fidelity:
-            if self.verbose:
-                print("Removing CNOT")
-            self.set_circuit(best[1])
-            self.original_fidelity = best[0]
-            return True
-        return False
-
     def fidelity(self, instructions):
         mat = self.process_finder.instructions_to_process_matrix(instructions)
         if type(mat) != np.ndarray:
@@ -163,10 +113,6 @@ class RewriteTket:
         s = np.einsum('kl,lk->', self.contracted, mat, optimize=True).real
         f = 2 ** (-3 * self.n_qubits) * s
         return f
-
-    def j_distance(self, instructions):
-        return j_distance_experimental(list(range(len(instructions))), self.target, [],
-                                       [converter.instruction_to_unitary(inst) for inst in instructions])
 
     def reduce(self):
         cleanup.apply(self.circuit)
@@ -184,21 +130,4 @@ class RewriteTket:
             else:
                 print("Didn't find anything to improve")
         return (f, new_fidelity)
-
-    def random_angle(self, i, j, max_diff):
-        inst = self.instructions[i]
-        if inst.op.get_type() not in matrices_with_params:
-            return
-        params = inst.op.get_params()
-        if j >= len(params):
-            return
-        new_params = list(params)
-        new_params[j] = params[j] + (random.random() - 0.5) * 2 * max_diff
-        new_circuit = converter.instructions_to_circuit(self.instructions[:i])
-        new_circuit.add_operation(inst.op.get_type(), new_params, inst.qubits)
-        new_circuit.add_circuit(converter.instructions_to_circuit(self.instructions[i + 1:]),
-                                list(range(self.n_qubits)))
-        self.set_circuit(new_circuit)
-        pass
-
 

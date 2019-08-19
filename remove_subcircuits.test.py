@@ -2,7 +2,9 @@ from remove_subcircuits import *
 import random
 from noise import depolarising_channel
 from common_gates import discrete_angle_key, get_cnot_key
-from metrics.J_fidelity import f_pro_experimental, f_pro
+from metrics.J_fidelity import ProcessFidelityFinder
+
+f_pro_experimental, f_pro
 
 n_qubits = 3
 precision = 4
@@ -10,6 +12,8 @@ key = discrete_angle_key(precision, n_qubits)
 key.update(get_cnot_key(n_qubits))
 weights = [1 for _ in range(3 * n_qubits * (2 ** precision - 1))] + [2 ** precision for _ in range(2 * (n_qubits - 1))]
 noise = [depolarising_channel(0.01, n_qubits)]
+fid = ProcessFidelityFinder(n_qubits)
+f_pro_experimental, f_pro = fid.f_pro_experimental, fid.f_pro
 
 
 def run():
