@@ -34,9 +34,9 @@ class Converter:
     def instruction_to_unitary(self, instruction):
         t = instruction.op.get_type()
         if t in matrices_no_params:
-            return matrices_no_params[t](instruction.qubits, self.n_qubits)
+            return matrices_no_params[t]([q.index for q in instruction.qubits], self.n_qubits)
         elif t in matrices_with_params:
-            return matrices_with_params[t](instruction.qubits, self.n_qubits,
+            return matrices_with_params[t]([q.index for q in instruction.qubits], self.n_qubits,
                                            [p * math.pi for p in instruction.op.get_params()])
         else:
             raise ValueError("Unexpected instruction", instruction)
@@ -45,7 +45,7 @@ class Converter:
         return self.matrix_list_product([self.instruction_to_unitary(i) for i in circuit.get_commands()[::-1]])
 
     def instructions_to_circuit(self, instructions):
-        c = Circuit(self.n_qubits)
+        c = Circuit(self.n_qubits, self.n_qubits)
         for inst in instructions:
             t = inst.op.get_type()
             c.add_operation(t, inst.op.get_params(), inst.qubits)
